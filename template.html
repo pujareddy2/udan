@@ -495,6 +495,13 @@ body { font-family: var(--font-body); color: #fff; }
   transition: border-color 150ms ease, background 150ms ease;
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
+
+/* Hide the persona switcher so users are locked to their role */
+nav > div.liquid-glass:nth-child(2) {
+  display: none !important;
+}
+
+.auth-foot {
 .control::placeholder { color: rgba(255,255,255,0.55); }
 .control:focus { border-color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.18); }
 select.control { appearance: none; cursor: pointer;
@@ -825,9 +832,11 @@ select.control option { color: #111; }
                var sPayload = sData.data || sData;
                var comp = sPayload.completion_percentage !== undefined ? sPayload.completion_percentage : sPayload.completion;
                
-               if (comp === 100) {
-                 window.__startPersona = payload.role;
-                 location.hash = "#dashboard/" + payload.role;
+                if (comp === 100) {
+                 var roleMap = { "farmer": "farmers", "student": "students", "jobseeker": "jobseekers" };
+                 var mappedRole = roleMap[payload.role] || payload.role || "jobseekers";
+                 window.__startPersona = mappedRole;
+                 location.hash = "#dashboard/" + mappedRole;
                } else {
                  location.hash = "#profile-completion";
                }
@@ -882,7 +891,9 @@ select.control option { color: #111; }
             body: JSON.stringify({ role: cat })
           });
           
-          window.__startPersona = cat;
+          var roleMap = { "farmer": "farmers", "student": "students", "jobseeker": "jobseekers" };
+          var mappedRole = roleMap[cat] || cat || "jobseekers";
+          window.__startPersona = mappedRole;
           location.hash = "#profile-completion";
           
         } catch (err) {

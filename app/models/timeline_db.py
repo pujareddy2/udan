@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Column
+from sqlmodel import SQLModel, Field, Column, Relationship
 from sqlalchemy.types import JSON
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -20,6 +20,8 @@ class TimelineEvent(SQLModel, table=True):
     readiness_gain: float = Field(default=0.0)
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    user: Optional["User"] = Relationship(back_populates="timeline_events")
 
 class TimelineMilestone(SQLModel, table=True):
     __tablename__ = "timeline_milestones"

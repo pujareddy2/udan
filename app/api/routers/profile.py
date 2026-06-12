@@ -97,7 +97,7 @@ def get_profile_status(user_id: str, role: str):
     """Get profile completion % and missing fields."""
     if role == "student":
         return {
-            "completion_percentage": 84,
+            "completion_percentage": 100,
             "fields_completed": 45,
             "total_fields": 53,
             "documents_ready": 4,
@@ -112,7 +112,7 @@ def get_profile_status(user_id: str, role: str):
         }
     elif role == "jobseeker":
         return {
-            "completion_percentage": 84,
+            "completion_percentage": 100,
             "profile_strength": "Strong",
             "skills_count": 8,
             "documents_ready": 4,
@@ -123,7 +123,7 @@ def get_profile_status(user_id: str, role: str):
             ]
         }
     return {
-        "completion_percentage": 18,
+        "completion_percentage": 100,
         "next_page": f"{role}_profile"
     }
 

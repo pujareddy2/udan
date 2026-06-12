@@ -5,16 +5,15 @@ router = APIRouter()
 @router.get("/notifications", tags=["Notifications"])
 def get_notifications():
     return {
-        "success": True,
-        "message": "Notifications retrieved successfully",
-        "notifications": [
-            {
-                "id": "notif_1",
-                "title": "Document Missing",
-                "message": "Please upload your Income Certificate",
-                "read": False
-            }
-        ]
+        "notifications": []
+    }
+
+@router.get("/notifications/summary", tags=["Notifications"])
+def get_notifications_summary():
+    return {
+        "unread": 5,
+        "deadlines": 2,
+        "new_opportunities": 3
     }
 
 @router.put("/notifications/{id}/read", tags=["Notifications"])

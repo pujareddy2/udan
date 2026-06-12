@@ -14,6 +14,7 @@ class User(SQLModel, table=True):
     password_hash: str
     is_active: bool = Field(default=True)
     last_login: Optional[datetime] = Field(default=None)
+    module_type: Optional[str] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
@@ -277,16 +278,7 @@ class MissedOpportunity(SQLModel, table=True):
     
     user: Optional[User] = Relationship(back_populates="missed_opportunities")
 
-class TimelineEvent(SQLModel, table=True):
-    __tablename__ = "timeline_events"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
-    event_type: str = Field(index=True) # APPLIED, RECOVERED, MISSED, PROFILE_UPDATED
-    title: str
-    impact_value: float = Field(default=0.0)
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    
-    user: Optional[User] = Relationship(back_populates="timeline_events")
+
 
 # ==========================================
 # PART 13: RESOURCE KNOWLEDGE BASE

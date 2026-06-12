@@ -155,25 +155,6 @@ class DynamicFollowupQuestion(SQLModel, table=True):
     
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-class DocumentRecoveryGuide(SQLModel, table=True):
-    __tablename__ = "document_recovery_guides"
-    
-    id: Optional[int] = Field(default=None, primary_key=True)
-    document_id: int = Field(foreign_key="document_master.id", index=True)
-    
-    recovery_steps: List[str] = Field(default_factory=list, sa_column=Column(JSON))
-    required_documents: List[str] = Field(default_factory=list, sa_column=Column(JSON))
-    
-    official_portal: Optional[str] = Field(default=None)
-    estimated_days: int = Field(default=14)
-    contact_details: Dict[str, str] = Field(default_factory=dict, sa_column=Column(JSON))
-    
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    # We define the relationship using string reference to avoid circular imports.
-    # The DocumentMaster model in domain.py should ideally have a back_populates.
-    document_master: Optional["DocumentMaster"] = Relationship(back_populates="recovery_guides")
-
 class AIRecommendation(SQLModel, table=True):
     __tablename__ = "ai_recommendations"
     

@@ -1,54 +1,56 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel import Session, select
+from app.core.db import get_session
+from app.models.domain import UserProfile
 
 router = APIRouter()
 
 @router.get("/{module}/documents/summary", tags=["Documents"])
-def get_module_documents_summary(module: str):
+def get_module_documents_summary(module: str, user_id: int = None, session: Session = Depends(get_session)):
+    available = 5
+    missing = ["Income Certificate", "Land Passbook"]
+    
+    if user_id:
+        user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
+        if user_profile and user_profile.profile_data:
+            docs = user_profile.profile_data.get("documents", [])
+            available = len(docs)
+            missing = []
+            if "Aadhaar" not in docs: missing.append("Aadhaar")
+            if "Land Passbook" not in docs: missing.append("Land Passbook")
+            if "Income Certificate" not in docs: missing.append("Income Certificate")
+            
     return {
-        "success": True,
-        "message": f"Document summary for {module}",
-        "available_documents": 5,
-        "missing_documents": 2,
-        "expired_documents": 1,
-        "required_documents": [
-            "Income Certificate",
-            "Aadhaar Card"
-        ]
+        "available_documents": available,
+        "missing_documents": len(missing),
+        "missing": missing
     }
 
 @router.get("/documents/{document_name}", tags=["Documents"])
 def get_document_details(document_name: str):
     return {
-        "success": True,
-        "message": "Document details retrieved",
         "name": document_name,
-        "sample_image": "https://example.com/sample_income.jpg",
-        "purpose": "Income Verification",
+        "sample_image": "",
         "authority": "MeeSeva",
         "validity": "1 Year",
-        "required_supporting_docs": [
-            "Aadhaar Card",
-            "Ration Card"
+        "purpose": "Income Verification" if "Income" in document_name else "Verification",
+        "required_for": [
+            "Scholarships",
+            "Subsidies"
         ]
     }
 
 @router.get("/documents/{document_name}/recovery-guide", tags=["Documents"])
 def get_document_recovery_guide(document_name: str):
     return {
-        "success": True,
-        "message": "Recovery guide retrieved",
         "document": document_name,
-        "authority": "MeeSeva",
         "apply_link": "https://ts.meeseva.telangana.gov.in/",
-        "processing_time": "7 Days",
         "required_documents": [
-            "Aadhaar Card"
+            "Aadhaar"
         ],
+        "processing_time": "7 Days",
         "steps": [
-            "Visit MeeSeva portal",
-            "Fill the application form",
-            "Upload Aadhaar",
-            "Pay fee",
-            "Wait 7 days"
+            "Visit MeeSeva",
+            "Submit Application"
         ]
     }

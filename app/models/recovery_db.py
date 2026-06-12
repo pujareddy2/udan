@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Column
+from sqlmodel import SQLModel, Field, Column, Relationship
 from sqlalchemy.types import JSON
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -12,6 +12,9 @@ class DocumentRecoveryGuide(SQLModel, table=True):
     difficulty_level: str = Field(default="Medium")
     min_days: int = Field(default=7)
     max_days: int = Field(default=14)
+    
+    document_id: Optional[int] = Field(default=None, foreign_key="document_master.id", index=True)
+    document_master: Optional["DocumentMaster"] = Relationship(back_populates="recovery_guides")
 
 class DocumentStateProcess(SQLModel, table=True):
     __tablename__ = "document_state_processes"
