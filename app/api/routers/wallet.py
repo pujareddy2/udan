@@ -1,39 +1,50 @@
-from fastapi import APIRouter, Depends
-from typing import Dict, Any
-from app.api.schemas.common import WalletDashboardResponse, DocumentDashboardResponse
-from app.core.security import get_current_user
+from fastapi import APIRouter, HTTPException
 
-router = APIRouter(prefix="/wallet", tags=["Opportunity & Document Wallets"])
+router = APIRouter()
 
-@router.get("/opportunities", response_model=WalletDashboardResponse)
-def get_opportunity_wallet(user_id: int = Depends(get_current_user)):
-    """
-    Returns the massive Swiggy-style dashboard state categorizing all opportunities into actionable buckets.
-    """
+@router.get("/wallet/opportunities", tags=["Wallet"])
+def get_wallet_opportunities():
+    """Get full opportunity wallet dashboard state."""
     return {
         "wallet_status": "OK",
-        "total_value_unlocked": 0.0,
-        "eligible_and_ready": [],
-        "blocked_by_documents": [],
-        "expiring_soon": [],
+        "total_value_unlocked": 36000.0,
+        "eligible_and_ready": [
+            {
+                "id": 1,
+                "title": "NSP Central Sector",
+                "benefit_value": 12000.0,
+                "deadline": "2025-03-31"
+            }
+        ],
+        "blocked_by_documents": [
+            {
+                "id": 5,
+                "title": "PM-KISAN",
+                "benefit_value": 6000.0
+            }
+        ],
+        "expiring_soon": [
+            {
+                "id": 8,
+                "title": "State Scholarship",
+                "benefit_value": 5000.0,
+                "deadline": "2024-05-01"
+            }
+        ],
         "under_review": []
     }
 
-@router.post("/opportunities/{opp_id}/apply")
-def start_application(opp_id: int, user_id: int = Depends(get_current_user)):
-    """
-    Marks an opportunity as 'Started' in the user's application tracker.
-    """
+@router.post("/wallet/opportunities/{opp_id}/apply", tags=["Wallet"])
+def apply_opportunity(opp_id: int):
+    """Start application for an opportunity."""
     return {"message": "Application started successfully."}
 
-@router.get("/documents", response_model=DocumentDashboardResponse)
-def get_document_wallet(user_id: int = Depends(get_current_user)):
-    """
-    Returns the master state of the user's document inventory.
-    """
+@router.get("/wallet/documents", tags=["Wallet"])
+def get_wallet_documents():
+    """Get full document inventory dashboard state."""
     return {
         "wallet_status": "OK",
-        "verified_documents": [],
-        "missing_documents": [],
-        "expiring_documents": []
+        "verified_documents": ["Aadhaar Card", "Income Certificate"],
+        "missing_documents": ["Caste Certificate", "Bank Passbook"],
+        "expiring_documents": ["Domicile Certificate (expires in 15 days)"]
     }

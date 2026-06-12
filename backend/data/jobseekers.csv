@@ -1,0 +1,7 @@
+title,description,module,is_active,close_date,source,amount,min_age,max_age_general,max_age_obc,max_age_sc_st,max_age_pwd,qualifications,categories,states,required_documents,required_skills,todo_notes
+SSC CGL 2026,Staff Selection Commission Combined Graduate Level,jobseeker,True,2026-12-31,ssc.nic.in,0,18,27,30,32,37,["graduate"],[],[],["Aadhaar"],["quantitative_aptitude"],
+SSC CHSL 2024,Staff Selection Commission Combined Higher Secondary Level,jobseeker,False,2024-05-01,ssc.nic.in,0,18,27,30,32,37,["12th_pass"],[],[],["Aadhaar"],["typing"],
+RRB NTPC 2025,Railway Recruitment Board Non-Technical Popular Categories,jobseeker,True,2025-10-10,rrbcdg.gov.in,0,18,30,33,35,40,["graduate"],[],[],["Aadhaar"],["typing"],
+TSPSC Group 4 2026,Telangana State Public Service Commission Group IV,jobseeker,True,2026-11-01,tspsc.gov.in,0,18,44,47,49,54,["graduate"],[],["telangana"],["Domicile Certificate"],[],
+NAPS Apprenticeship,National Apprenticeship Promotion Scheme,jobseeker,True,,apprenticeshipindia.gov.in,10000,14,,,,,,["10th_pass"],[],[],["Aadhaar"],[],
+PMKVY,Pradhan Mantri Kaushal Vikas Yojana,jobseeker,True,,pmkvyofficial.org,0,15,,,,,,[],[],[],["Aadhaar"],[],

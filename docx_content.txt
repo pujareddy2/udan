@@ -1,0 +1,879 @@
+UDAAN AI
+Complete API Documentation
+Backend API Reference — All Modules & Keys
+Version 1.0  |  Framework: FastAPI  |  Auth: JWT Bearer
+1. System Overview
+Udaan AI is a 19-engine microservice-style architecture built in Python FastAPI. It helps Indian citizens discover, qualify for, and apply to government welfare schemes, scholarships, and entitlement programs. The system uses AI-driven engines to analyze user profiles and unlock value.
+Technology
+Value
+Notes
+Backend Framework
+FastAPI (Python)
+Async, auto-docs at /docs
+Database
+SQLite (dev) / PostgreSQL (prod)
+SQLModel ORM
+Authentication
+JWT Bearer Token (HS256)
+7-day expiry
+AI Engine
+Google Gemini API
+Profile analysis & recommendations
+Search Engine
+Serper.dev API
+Internet discovery of new schemes
+File Storage
+Cloudinary / AWS S3
+Document upload & management
+Base URL
+http://localhost:8000
+API prefix: /api/v1
+2. Environment Configuration & API Keys
+All secrets are stored in the .env file at the project root. NEVER commit this file to version control. Below is the complete breakdown of every key required.
+2.1  Internal Security Keys (Generate These Yourself)
+  JWT_SECRET_KEY
+Description: 
+HS256 secret for signing JWT tokens. Must be cryptographically random.
+Auth: 
+N/A
+Field
+Type
+Required
+Description/Validation
+JWT_SECRET_KEY
+string
+Yes ✓
+Generate with: python -c "import secrets; print(secrets.token_hex(32))". Never use the default. Min 32 chars.
+JWT_ALGORITHM
+string
+Yes ✓
+Set to HS256. Do not change unless migrating to RS256 for production.
+ACCESS_TOKEN_EXPIRE_MINUTES
+int
+Yes ✓
+Default: 10080 (7 days). For production, reduce to 60 (1 hour) with refresh token logic.
+Response Examples
+JWT_SECRET_KEY=f25c254e09b0f5d1c97249ab397096ad9377511adc5f755b83313d83597d86b6
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+2.2  Google Gemini API Key (AI Engine)
+Used by: profile_understanding.py, extraction_agent.py, knowledge_fusion_engine.py, eligibility.py, application_coach.py, query_generator.py and more — essentially ALL 19 AI engines.
+Step
+Instructions
+1. Get API Key
+Go to: https://aistudio.google.com/app/apikey → Sign in with Google → Click 'Create API Key'
+2. Select Project
+Create a new Google Cloud project or use existing. Project name: 'udaan-ai-hackathon'
+3. Copy Key
+Copy the key starting with 'AIza...' and paste into .env file
+4. Model Used
+gemini-1.5-pro  (or gemini-1.5-flash for faster/cheaper responses)
+5. Rate Limits
+Free tier: 60 QPM. The backend calls Gemini for eligibility scoring, document extraction, coach queries.
+6. .env Entry
+GEMINI_API_KEY=your_key_here
+2.3  Serper.dev API Key (Internet Discovery Engine)
+Used by: internet_discovery.py service — discovers new government schemes and welfare programs via web search. Also used by opportunity_trust_engine.py for verifying scheme authenticity.
+Step
+Instructions
+1. Get API Key
+Go to: https://serper.dev → Sign up free → Dashboard → 'API Key' tab
+2. Free Tier
+2,500 free searches/month. Sufficient for hackathon.
+3. .env Entry
+SERPER_API_KEY=your_key_here
+4. Usage
+Called when discovering new schemes beyond the seeded database. Endpoint: https://google.serper.dev/search
+2.4  Cloudinary Keys (Document Storage)
+Used by: document_wallet.py, document_engine.py — for storing uploaded identity documents, certificates, and fetching document samples.
+Step
+Instructions
+1. Get Account
+Go to: https://cloudinary.com/users/register/free → Free account (25GB storage)
+2. Find Keys
+Dashboard → Settings → API Keys → Copy Cloud Name, API Key, API Secret
+3. .env Entries
+STORAGE_PROVIDER=cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_secret
+4. Folder Structure
+udaan/documents/{user_id}/{doc_type}/  — All uploads are organized by user and document type
+2.5  Complete .env Template
+# === UDAAN AI — .env Configuration File ===
+# Security
+JWT_SECRET_KEY=<run: python -c "import secrets; print(secrets.token_hex(32))">
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+# Database
+DATABASE_URL=sqlite:///./udaan_v2.db
+# DATABASE_URL=postgresql://user:pass@localhost:5432/udaan  # Production
+# AI Engine (REQUIRED for ALL intelligence features)
+GEMINI_API_KEY=AIza...
+# Internet Discovery (REQUIRED for scheme discovery)
+SERPER_API_KEY=...
+# File Storage
+STORAGE_PROVIDER=cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloud
+CLOUDINARY_API_KEY=your_key
+CLOUDINARY_API_SECRET=your_secret
+# CORS (use * for dev, restrict in prod)
+BACKEND_CORS_ORIGINS=["http://localhost:3000","https://yourapp.com"]
+3. Authentication APIs
+These are public endpoints (no JWT required). They handle user registration, login, and profile/role setup. This is a 3-step onboarding flow.
+3.1 API Quick Reference
+Method
+Endpoint
+Description
+Auth
+POST
+/auth/register
+Step 1: Create account (email + password)
+🔓 Public
+POST
+/auth/login
+Step 2: Login & get JWT token
+🔓 Public
+POST
+/auth/{user_id}/profile
+Step 3: Create demographic profile
+🔓 Public
+POST
+/auth/{user_id}/role
+Step 4: Assign a role (can repeat for multi-role)
+🔓 Public
+3.2 Detailed Endpoint Specifications
+POST  /auth/register
+Description: 
+Creates a new user account. Validates email uniqueness and hashes password with bcrypt.
+Auth: 
+Public — No token required
+Field
+Type
+Required
+Description/Validation
+email
+EmailStr
+Yes ✓
+Valid email address. Must be unique in database. E.g.: user@gmail.com
+password
+string
+Yes ✓
+8-50 chars. Must contain: uppercase, lowercase, number, special char (!@#$%^&*)
+confirm_password
+string
+Yes ✓
+Must exactly match password field.
+Response Examples
+201 Created:  {"message": "Account created.", "user_id": 1, "email": "user@gmail.com"}
+400 Bad Request: {"detail": "Email already registered"}
+422 Validation Error: {"detail": [{"loc": ["body","password"], "msg": "must contain uppercase"}]}
+POST  /auth/login
+Description: 
+OAuth2 password flow login. Returns JWT Bearer token valid for 7 days.
+Auth: 
+Public — No token required
+Note: 
+Send as application/x-www-form-urlencoded, NOT JSON. Standard OAuth2 form.
+Field
+Type
+Required
+Description/Validation
+username
+string
+Yes ✓
+The user's email address (OAuth2 spec uses 'username' field)
+password
+string
+Yes ✓
+User's plaintext password
+grant_type
+string
+No
+Must be 'password' if provided. Default form field.
+Response Examples
+200 OK: {"access_token": "eyJ...", "token_type": "bearer", "role_claims": ["student"]}
+401 Unauthorized: {"detail": "Incorrect email or password"}
+POST  /auth/{user_id}/profile
+Description: 
+Creates the common demographic profile after account creation.
+Auth: 
+Public (user_id in path)
+Field
+Type
+Required
+Description/Validation
+full_name
+string
+Yes ✓
+Min 2 characters. Full legal name.
+mobile_number
+string
+Yes ✓
+10-digit Indian mobile. +91 prefix optional. Auto-stripped.
+age
+int
+Yes ✓
+13-120. Under 18 users are treated as students for scheme filtering.
+gender
+enum
+Yes ✓
+Options: Male | Female | Other | Prefer Not to Say
+state
+string
+Yes ✓
+Indian state name. Used to filter state-specific schemes. E.g.: Maharashtra
+district
+string
+Yes ✓
+District within state. For hyper-local scheme discovery.
+category
+enum
+Yes ✓
+Options: General | OBC | SC | ST | Minority. Critical for eligibility calculation.
+preferred_language
+string
+No
+ISO 639-1 code. Default: en. Supported: en, hi, mr, ta, te, kn, gu, bn
+Response Examples
+201 Created: {"message": "Profile created.", "profile_id": 1, "full_name": "Rahul Sharma"}
+POST  /auth/{user_id}/role
+Description: 
+Assigns a role to user. Can be called multiple times for multi-role users.
+Auth: 
+Public (user_id in path)
+Field
+Type
+Required
+Description/Validation
+role
+enum
+Yes ✓
+Options: student | farmer | jobseeker | entrepreneur | women_entrepreneur | startup | senior_citizen
+Response Examples
+201 Created: {"message": "Role 'student' assigned.", "role_id": 1, "assigned_role": "student"}
+400 Bad Request: {"detail": "Role must be one of: ['student', 'farmer', ...]"}
+4. Profile Completion APIs
+These APIs drive the intelligence layer of Udaan. Profile completion powers ALL 19 backend engines. After updating, background recalculation fires automatically.
+4.1 API Quick Reference
+Method
+Endpoint
+Description
+Auth
+GET
+/profile/{user_id}/{role}/status
+Get profile completion % and missing fields
+🔒 JWT
+PUT
+/profile/{user_id}/{role}
+Update role-specific profile (triggers AI engines)
+🔒 JWT
+4.2 Role Profile Fields
+Each role has a specific profile model with distinct fields. Below are ALL fields for ALL 7 roles.
+Student Profile  (role = 'student')
+Field
+Type
+Required
+Description
+education_level
+string
+Yes
+E.g.: Class 10, Class 12, Undergraduate, Postgraduate, PhD
+current_course
+string
+Yes
+E.g.: B.Tech Computer Science, BA Political Science
+institution_type
+string
+Yes
+Government | Private | Deemed | Central University
+annual_family_income
+float
+Yes
+Annual income in INR. Critical for income-based scholarship eligibility (e.g., < 2.5L for NSP)
+previous_year_marks_percentage
+float
+Yes
+0-100. Used for merit-based schemes. E.g., PM Scholarship requires >60%
+is_orphan
+bool
+No
+Default: false. Unlocks orphan-specific welfare schemes.
+is_disabled
+bool
+No
+Default: false. Unlocks PWDA scheme eligibility.
+Farmer Profile  (role = 'farmer')
+Field
+Type
+Required
+Description
+land_size_acres
+float
+Yes
+Total land holding in acres. PM-KISAN requires < 2 hectares.
+land_type
+string
+Yes
+Irrigated | Rainfed | Semi-Arid
+primary_crop
+string
+Yes
+E.g.: Rice, Wheat, Cotton, Sugarcane — drives crop insurance scheme matching
+pm_kisan_id
+string?
+No
+Existing PM-KISAN registration ID. Affects eligibility for PM-KISAN continuation benefits.
+has_kisan_credit_card
+bool
+No
+Default: false. Affects KCC-linked subsidies and interest subvention.
+annual_income
+float
+Yes
+Annual agricultural income in INR.
+Job Seeker Profile  (role = 'jobseeker')
+Field
+Type
+Required
+Description
+education_level
+string
+Yes
+Highest qualification. E.g.: 10th, 12th, ITI, Diploma, Graduate
+skills
+List[str]
+Yes
+JSON array: ["Welding", "Electrician", "Python"]. Drives PMKVY scheme matching.
+employment_status
+string
+Yes
+Unemployed | Underemployed | Seeking Upgrade
+years_of_experience
+float
+No
+Default: 0. Experience in years. Affects eligibility for skill upgrade programs.
+preferred_job_role
+string
+Yes
+Target role. E.g.: Software Developer, Electrician, Plumber.
+is_disabled
+bool
+No
+Default: false. Unlocks PWDA employment schemes.
+Entrepreneur Profile  (role = 'entrepreneur')
+Field
+Type
+Required
+Description
+business_type
+string
+Yes
+Sole Proprietorship | Partnership | Private Limited | LLP | OPC
+industry_sector
+string
+Yes
+E.g.: Manufacturing, Services, Agriculture, Handicraft, Retail
+annual_turnover
+float
+Yes
+Annual revenue in INR. MSME classification: Micro < 1Cr, Small < 10Cr, Medium < 50Cr
+years_in_operation
+float
+Yes
+Years of business operation. Some schemes require > 3 years.
+msme_udyam_number
+string?
+No
+MSME Udyam Registration Number. Unlocks 50+ MSME government schemes.
+number_of_employees
+int
+No
+Default: 1. Employee count affects MSME category & credit guarantee schemes.
+Women Entrepreneur Profile  (role = 'women_entrepreneur')
+Field
+Type
+Required
+Description
+business_type
+string
+Yes
+Same as Entrepreneur. SHG | Sole Proprietorship | Cooperative etc.
+industry_sector
+string
+Yes
+Agri, Textile, Beauty, F&B etc. Unlocks sector-specific women schemes.
+annual_turnover
+float
+Yes
+Annual revenue in INR.
+percentage_women_ownership
+float
+Yes
+0-100. Mudra Loan & Stree Shakti scheme require >= 51% women ownership.
+msme_udyam_number
+string?
+No
+Udyam number if registered. Enables CGTMSE & WE-Hub benefits.
+marital_status
+string
+Yes
+Single | Married | Widowed | Divorced. Affects widow entrepreneur scheme eligibility.
+Startup Profile  (role = 'startup')
+Field
+Type
+Required
+Description
+dpiit_recognized
+bool
+Yes
+DPIIT recognition unlocks Startup India tax exemptions, fast-track IPR, govt tenders.
+startup_india_id
+string?
+No
+Startup India registration ID (DIPP-XXXXX). Required for some central schemes.
+funding_stage
+string
+Yes
+Bootstrapped | Pre-Seed | Seed | Series A | Series B+
+patent_count
+int
+No
+Default: 0. Patent count. Affects eligibility for SIPP and IPR fast-track scheme.
+incubator_attached
+bool
+No
+Default: false. Attached to registered incubator enables TIDE 2.0 and BIRAC grants.
+annual_turnover
+float
+Yes
+Annual revenue in INR. Startup India scheme requires < 100Cr.
+Senior Citizen Profile  (role = 'senior_citizen')
+Field
+Type
+Required
+Description
+marital_status
+string
+Yes
+Single | Married | Widowed | Divorced. Widow pension schemes require widowed status.
+living_arrangement
+string
+Yes
+Living Alone | With Family | Old Age Home. Affects old age home subsidy eligibility.
+pension_status
+string
+Yes
+No Pension | Government Pension | Private Pension | EPFO. Drives IGNOAPS eligibility.
+health_conditions
+List[str]
+No
+JSON array: ["Diabetes", "Heart Disease"]. Unlocks medical scheme eligibility.
+annual_income
+float
+Yes
+Annual income in INR. IGNOAPS requires < 35,468/year.
+is_disabled
+bool
+No
+Default: false. Unlocks PWDA senior scheme supplements.
+5. Opportunity Engine APIs
+Core discovery APIs. The eligibility engine runs in background and populates EligibilitySnapshot table. These endpoints serve that computed data.
+Method
+Endpoint
+Description
+Auth
+GET
+/opportunities/eligible
+Get schemes user is currently eligible for
+🔒 JWT
+GET
+/opportunities/recommended
+Get schemes user can unlock with more documents
+🔒 JWT
+GET
+/opportunities/{opportunity_id}
+Deep-dive details for a specific scheme
+🔒 JWT
+GET  /opportunities/eligible
+Description: 
+Returns all opportunities the user strictly qualifies for based on demographic + role profile.
+Auth: 
+🔒 JWT Bearer Token Required
+Field
+Type
+Required
+Description/Validation
+user_id
+int
+Yes ✓
+Extracted from JWT token automatically via get_current_user dependency.
+Response Examples
+200 OK: [{"id": 1, "title": "NSP Central Sector", "benefit_value": 12000.0, "deadline": "2025-03-31", "tags": ["Scholarship", "Student"]}]
+200 OK: []  (if no eligible schemes found)
+GET  /opportunities/recommended
+Description: 
+Returns schemes user is not yet eligible for but can unlock by acquiring specific missing documents/info.
+Auth: 
+🔒 JWT Bearer Token Required
+Note: 
+These are opportunity_wallet entries with status = 'Blocked by Document'. Frontend should show 'Near Miss' UI.
+Response Examples
+200 OK: [{"id": 5, "title": "PM-KISAN", "benefit_value": 6000.0, "tags": ["Farmer", "Income Support"]}]
+GET  /opportunities/{opportunity_id}
+Description: 
+Full details of a single opportunity including all eligibility rules and required docs.
+Auth: 
+🔒 JWT Bearer Token Required
+Field
+Type
+Required
+Description/Validation
+opportunity_id
+int
+Yes ✓
+Path parameter. The ID of the opportunity from the database.
+Response Examples
+200 OK: {"id": 1, "title": "NSP", "benefit_value": 12000.0, "tags": ["Scholarship"], "description": "...",
+  "eligibility_rules": {"age": {"max": 25}, "income": {"max": 250000}},
+  "required_documents": ["Aadhaar Card", "Income Certificate"],
+  "followup_questions": ["What is your institution's AISHE code?"]}
+6. Wallet APIs
+The wallet is the core dashboard concept — a Swiggy-style dashboard showing all opportunities bucketed by action state. This powers the main app screen.
+Method
+Endpoint
+Description
+Auth
+GET
+/wallet/opportunities
+Get full opportunity wallet dashboard state
+🔒 JWT
+POST
+/wallet/opportunities/{opp_id}/apply
+Start application for an opportunity
+🔒 JWT
+GET
+/wallet/documents
+Get full document inventory dashboard state
+🔒 JWT
+GET  /wallet/opportunities
+Description: 
+The master Opportunity Wallet Dashboard. Shows all opportunities categorized into actionable buckets.
+Auth: 
+🔒 JWT Bearer Token Required
+Note: 
+This is the PRIMARY frontend API call on app load. All buckets are pre-computed by background engines.
+Response Examples
+200 OK: {
+  "wallet_status": "OK",
+  "total_value_unlocked": 36000.0,
+  "eligible_and_ready": [/* schemes user qualifies for NOW */],
+  "blocked_by_documents": [/* near-miss: needs 1-2 docs */],
+  "expiring_soon": [/* deadline < 30 days */],
+  "under_review": [/* applications submitted */]
+}
+POST  /wallet/opportunities/{opp_id}/apply
+Description: 
+Marks an opportunity as 'Started' in ApplicationTracker. Triggers coach guidance flow.
+Auth: 
+🔒 JWT Bearer Token Required
+Field
+Type
+Required
+Description/Validation
+opp_id
+int
+Yes ✓
+Path parameter. Opportunity ID to start application for.
+Response Examples
+200 OK: {"message": "Application started successfully."}
+404 Not Found: {"detail": "Opportunity not found"}
+409 Conflict: {"detail": "Application already exists for this opportunity"}
+GET  /wallet/documents
+Description: 
+Document inventory showing verified, missing, and expiring documents across all roles.
+Auth: 
+🔒 JWT Bearer Token Required
+Response Examples
+200 OK: {
+  "wallet_status": "OK",
+  "verified_documents": ["Aadhaar Card", "Income Certificate"],
+  "missing_documents": ["Caste Certificate", "Bank Passbook"],
+  "expiring_documents": ["Domicile Certificate (expires in 15 days)"]
+}
+7. Lifecycle & Recovery APIs
+These APIs expose the recovery intelligence — showing what users missed, why they missed it, and what they must do to prevent future losses.
+Method
+Endpoint
+Description
+Auth
+GET
+/lifecycle/missed-opportunities
+Get list of opportunities user permanently lost
+🔒 JWT
+GET
+/lifecycle/recovery-plan
+Get actionable recovery playbook
+🔒 JWT
+GET
+/lifecycle/timeline
+Get full chronological activity timeline
+🔒 JWT
+GET  /lifecycle/missed-opportunities
+Description: 
+Returns permanent losses with root cause analysis — the 'grief screen'.
+Auth: 
+🔒 JWT Bearer Token Required
+Response Examples
+200 OK: [{
+  "opportunity_id": 3,
+  "title": "NSP Post-Matric Scholarship",
+  "missed_value": 15000.0,
+  "root_cause": "Application deadline passed. Caste certificate not uploaded.",
+  "missed_date": "2025-01-15"
+}]
+GET  /lifecycle/recovery-plan
+Description: 
+The recovery engine output — specific actionable steps to protect remaining eligible value.
+Auth: 
+🔒 JWT Bearer Token Required
+Response Examples
+200 OK: {
+  "recovery_plan": "Upload your Income Certificate before March 31 to stay eligible for PM-KISAN and NSP. Visit Block Development Office.",
+  "action_items": [
+    {"doc": "Income Certificate", "deadline": "2025-03-31", "issuer": "Tehsildar Office"},
+    {"doc": "Aadhaar Update (Mobile Link)", "deadline": "2025-04-15", "issuer": "UIDAI Centre"}
+  ]
+}
+GET  /lifecycle/timeline
+Description: 
+Full chronological feed of user's journey — applied, approved, missed, profile updated etc.
+Auth: 
+🔒 JWT Bearer Token Required
+Response Examples
+200 OK: [{
+  "event_type": "APPLIED",
+  "title": "Applied for NSP Central Sector Scholarship",
+  "impact_value": 12000.0,
+  "date": "2025-01-10"
+}]
+8. The 19 Background Intelligence Engines
+These services run in the background and are triggered by profile updates or scheduled tasks. They are NOT directly exposed as API endpoints — they write to database snapshot tables which the wallet/opportunity APIs then serve. Understanding these helps build the frontend correctly.
+#
+Engine File
+Trigger
+Output / Purpose
+1
+profile_understanding.py
+POST /profile PUT
+Gemini AI: deep understands user's situation, generates follow-up questions
+2
+eligibility.py
+Profile update
+Checks user against ALL opportunities, writes EligibilitySnapshot
+3
+dynamic_eligibility.py
+Profile update
+Real-time eligibility recheck with latest rule changes
+4
+document_readiness.py
+Document upload
+Calculates document completeness score (0-100) for ReadinessSnapshot
+5
+document_engine.py
+Profile update
+Maps which docs are needed for which schemes
+6
+document_dependency.py
+Doc uploaded
+Finds chain dependencies (Aadhaar → Income Cert → Caste Cert)
+7
+document_wallet.py
+Doc update
+Organizes all docs into wallet buckets: Verified/Missing/Expiring
+8
+document_expiry.py
+Scheduled daily
+Detects documents expiring < 30 days and fires notifications
+9
+document_recovery.py
+Missed opp event
+Creates step-by-step recovery guide for missing documents
+10
+document_recovery_engine.py
+Recovery request
+Generates offline + online options for obtaining each document
+11
+opportunity_wallet.py
+Eligibility update
+Populates the 4 wallet buckets (eligible, blocked, expiring, under_review)
+12
+priority_engine.py
+Wallet update
+Ranks opportunities by value/deadline/ease — Swiggy-style sorting
+13
+value_engine.py
+Eligibility update
+Calculates total unlocked value (INR) for ValueSnapshot
+14
+deadline_engine.py
+Scheduled daily
+Monitors approaching deadlines, fires CRITICAL notifications
+15
+missed_opportunity_engine.py
+Deadline passed
+Writes MissedOpportunity records with root cause analysis
+16
+notification_engine.py
+All events
+Queues notifications with priority tiers (CRITICAL/HIGH/MEDIUM/LOW)
+17
+digest_engine.py
+Scheduled daily/weekly
+Aggregates notifications into digest summary
+18
+knowledge_fusion_engine.py
+Scheduled weekly
+Gemini: fuses new internet discoveries with DB knowledge
+19
+internet_discovery.py
+Scheduled weekly
+Serper API: discovers new government schemes from the web
+9. Frontend Integration — Complete Flow Examples
+9.1  User Onboarding Flow (Frontend Steps)
+Step
+API Call
+What to Store
+Next Action
+1
+POST /auth/register
+Store user_id from response
+Redirect to profile creation
+2
+POST /auth/login
+Store access_token in localStorage
+Add Authorization header to all future requests
+3
+POST /auth/{id}/profile
+Store profile_id
+Show role selection screen
+4
+POST /auth/{id}/role
+Store assigned_role
+Show role-specific profile form
+5
+PUT /profile/{id}/{role}
+Nothing needed
+Background engines fire automatically. Poll /wallet/opportunities
+6
+GET /wallet/opportunities
+Store full wallet state
+Render main dashboard with 4 buckets
+9.2  Authentication Header
+After login, include the JWT in every API request:
+// JavaScript/Axios example
+const token = localStorage.getItem('access_token');
+const response = await axios.get('/api/v1/wallet/opportunities', {
+  headers: { 'Authorization': `Bearer ${token}` }
+});
+// Fetch API example
+fetch('/api/v1/wallet/opportunities', {
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+});
+9.3  Error Response Schema
+HTTP Code
+When
+Response Body
+400
+Bad Request
+{"detail": "Email already registered"}
+401
+Unauthorized
+{"detail": "Not authenticated"} — missing/invalid JWT
+403
+Forbidden
+{"detail": "Not enough permissions"} — wrong role
+404
+Not Found
+{"detail": "Resource not found"}
+422
+Validation
+{"detail": [{"loc": ["body","field"], "msg": "error", "type": "value_error"}]}
+500
+Server Error
+{"detail": "Internal server error"}
+10. Database Tables Summary
+Table
+Primary Use
+Written By
+users
+Core auth accounts
+POST /auth/register
+user_profiles
+Demographic data (name, age, state, category)
+POST /auth/{id}/profile
+user_roles
+Role assignments per user
+POST /auth/{id}/role
+student_profiles
+Student-specific extended data
+PUT /profile/{id}/student
+farmer_profiles
+Farmer-specific extended data
+PUT /profile/{id}/farmer
+jobseeker_profiles
+Job seeker data
+PUT /profile/{id}/jobseeker
+entrepreneur_profiles
+Entrepreneur data
+PUT /profile/{id}/entrepreneur
+women_entrepreneur_profiles
+Women entrepreneur data
+PUT /profile/{id}/women_entrepreneur
+startup_profiles
+Startup data
+PUT /profile/{id}/startup
+senior_citizen_profiles
+Senior citizen data
+PUT /profile/{id}/senior_citizen
+opportunities
+Government schemes database
+Seeded via data/load_data.py
+opportunity_deadlines
+Application deadlines by cycle
+Seeded / Admin
+opportunity_categories
+Tag taxonomy (Scholarship, MSME, etc.)
+Seeded
+document_master
+Master doc reference (Aadhaar, etc.)
+Seeded
+documents
+User's document inventory
+Document upload API
+eligibility_snapshots
+Computed eligibility per user per scheme
+eligibility.py engine
+readiness_snapshots
+Document readiness score 0-100
+document_readiness.py
+value_snapshots
+Unlocked/at-risk INR value
+value_engine.py
+applications
+Application tracking
+POST /wallet/opportunities/{id}/apply
+notification_queue
+Pending notification messages
+notification_engine.py
+missed_opportunities
+Permanently lost opportunities
+missed_opportunity_engine.py
+timeline_events
+Chronological user activity
+All engines on events
+Udaan AI — API Documentation
+Auto-docs available at: http://localhost:8000/docs  (Swagger UI)  |  /redoc  (ReDoc)

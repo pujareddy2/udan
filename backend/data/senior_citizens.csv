@@ -1,0 +1,6 @@
+title,description,module,is_active,close_date,source,amount,min_age,max_age_general,max_age_obc,max_age_sc_st,max_age_pwd,qualifications,categories,states,required_documents,required_skills,todo_notes
+IGNOAPS Pension,Indira Gandhi National Old Age Pension Scheme,senior_citizen,True,,nsap.nic.in,1000,60,,,,,,[],["bpl"],[],["Aadhaar","Income Certificate"],[],
+Ayushman Bharat PM-JAY Senior Health,Free Health Insurance Cover up to 5 Lakhs for Seniors,senior_citizen,True,,pmjay.gov.in,500000,70,,,,,,[],[],[],["Aadhaar"],[],
+Rashtriya Vayoshri Yojana,Assisted Living Devices for Senior Citizens,senior_citizen,True,,alimco.in,0,60,,,,,,[],["bpl"],[],["Medical Certificate"],[],
+Senior Citizens Savings Scheme,SCSS Post Office Deposit Scheme,senior_citizen,True,,indiapost.gov.in,0,60,,,,,,[],[],[],[],[],
+Telangana Aasara Old-Age Pension,Aasara Pension Scheme for Old Age,senior_citizen,False,,telangana.gov.in,2016,65,,,,,,[],[],["telangana"],["Aadhaar"],[],

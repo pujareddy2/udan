@@ -1,36 +1,45 @@
 from fastapi import APIRouter, Depends
-from typing import List
-from app.api.schemas.common import OpportunityListSchema, OpportunityDetailSchema
-from app.core.security import get_current_user
 
-router = APIRouter(prefix="/opportunities", tags=["Opportunity Engine"])
+router = APIRouter()
 
-@router.get("/eligible", response_model=List[OpportunityListSchema])
-def get_eligible_opportunities(user_id: int = Depends(get_current_user)):
-    """
-    Returns all opportunities the user is strictly eligible for based on their demographic profile.
-    """
-    return []
+# Note: In a real app, these endpoints would be protected by a JWT auth dependency.
+# For scaffolding, we will simulate it.
 
-@router.get("/recommended", response_model=List[OpportunityListSchema])
-def get_recommended_opportunities(user_id: int = Depends(get_current_user)):
-    """
-    Returns opportunities the user is not yet eligible for, but could unlock if they acquire missing documents.
-    """
-    return []
+@router.get("/opportunities/eligible", tags=["Opportunities"])
+def get_eligible_opportunities():
+    """Get schemes user is currently eligible for."""
+    return [
+        {
+            "id": 1,
+            "title": "NSP Central Sector",
+            "benefit_value": 12000.0,
+            "deadline": "2025-03-31",
+            "tags": ["Scholarship", "Student"]
+        }
+    ]
 
-@router.get("/{opportunity_id}", response_model=OpportunityDetailSchema)
-def get_opportunity_details(opportunity_id: int, user_id: int = Depends(get_current_user)):
-    """
-    Returns the deep-dive details, rules, and required documents for a specific opportunity.
-    """
+@router.get("/opportunities/recommended", tags=["Opportunities"])
+def get_recommended_opportunities():
+    """Get schemes user can unlock with more documents (Near Miss)."""
+    return [
+        {
+            "id": 5,
+            "title": "PM-KISAN",
+            "benefit_value": 6000.0,
+            "tags": ["Farmer", "Income Support"]
+        }
+    ]
+
+@router.get("/opportunities/{opportunity_id}", tags=["Opportunities"])
+def get_opportunity_details(opportunity_id: int):
+    """Deep-dive details for a specific scheme."""
     return {
         "id": opportunity_id,
-        "title": "Mock Scheme",
-        "benefit_value": 0.0,
-        "tags": [],
-        "description": "Details",
-        "eligibility_rules": {},
-        "required_documents": [],
-        "followup_questions": []
+        "title": "NSP",
+        "benefit_value": 12000.0,
+        "tags": ["Scholarship"],
+        "description": "National Scholarship Portal scheme...",
+        "eligibility_rules": {"age": {"max": 25}, "income": {"max": 250000}},
+        "required_documents": ["Aadhaar Card", "Income Certificate"],
+        "followup_questions": ["What is your institution's AISHE code?"]
     }

@@ -19,9 +19,34 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
-    # Note: Routers will be included here via an api_router
-    # from app.api.v1.api import api_router
-    # app.include_router(api_router, prefix=settings.API_V1_STR)
+    # Include basic routers
+    from app.api.routers import auth, profile, opportunities, wallet, lifecycle
+    app.include_router(auth.router, prefix="/api/v1")
+    app.include_router(profile.router, prefix="/api/v1")
+    app.include_router(opportunities.router, prefix="/api/v1")
+    app.include_router(wallet.router, prefix="/api/v1")
+    app.include_router(lifecycle.router, prefix="/api/v1")
+    
+    # Include AI and Intelligence routers
+    from app.api.routers import (
+        eligibility, readiness, value, documents, notifications,
+        dashboard, ai_discovery, coach, intelligence, profile_context, search
+    )
+    app.include_router(eligibility.router, prefix="/api/v1")
+    app.include_router(readiness.router, prefix="/api/v1")
+    app.include_router(value.router, prefix="/api/v1")
+    app.include_router(documents.router, prefix="/api/v1")
+    app.include_router(notifications.router, prefix="/api/v1")
+    app.include_router(dashboard.router, prefix="/api/v1")
+    app.include_router(ai_discovery.router, prefix="/api/v1")
+    app.include_router(coach.router, prefix="/api/v1")
+    app.include_router(intelligence.router, prefix="/api/v1")
+    app.include_router(profile_context.router, prefix="/api/v1")
+    app.include_router(search.router, prefix="/api/v1")
+    
+    # Include Test Integrations router
+    from app.api.routers import test_integration
+    app.include_router(test_integration.router, prefix="/api/v1")
 
     @app.get("/health")
     def health_check():

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     # EXTERNAL APIS
     GEMINI_API_KEY: str = ""
     SERPER_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
     
     # STORAGE (S3 or Cloudinary)
     STORAGE_PROVIDER: str = "cloudinary" # or "s3"
