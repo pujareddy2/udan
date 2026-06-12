@@ -114,17 +114,28 @@ class OpportunityCategory(SQLModel, table=True):
 # ==========================================
 class DocumentMaster(SQLModel, table=True):
     __tablename__ = "document_master"
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     document_name: str = Field(unique=True, index=True)
+    document_type: str = Field(default="General", index=True) # Identity, Financial, Property, Academic
     description: str
-    purpose: str
-    issuing_authority: str
-    validity_months: int = Field(default=12)
-    processing_time_days: str = Field(default="7-15 Days")
-    renewal_rules: str
+    
+    issuing_authority: str = Field(index=True)
+    official_apply_link: Optional[str] = Field(default=None)
+    sample_image_url: Optional[str] = Field(default=None)
+    
+    validity_period: str = Field(default="Lifetime") # Lifetime, 1 Year, 6 Months
+    renewal_required: bool = Field(default=False)
+    
+    required_supporting_documents: List[str] = Field(default_factory=list, sa_column=Column(JSON))
+    processing_time: str = Field(default="14 Days")
+    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     
     resources: List["DocumentResource"] = Relationship(back_populates="document_master")
     user_documents: List["Document"] = Relationship(back_populates="document_master")
+    recovery_guides: List["DocumentRecoveryGuide"] = Relationship(back_populates="document_master")
 
 class DocumentResource(SQLModel, table=True):
     __tablename__ = "document_resources"

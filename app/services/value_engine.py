@@ -1,190 +1,152 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel
+from datetime import datetime, timedelta
 
-from app.services.eligibility import get_field, safe_float, safe_list
+# ==========================================
+# 1. OUTPUT SCHEMAS
+# ==========================================
+class ValueSummary(BaseModel):
+    eligible_value: float
+    potential_value: float
+    protected_value: float
+    missed_value: float
+    recovery_value: float
+    total_opportunities: int
 
-# =================================================================
-# LAYER 1 — BENEFIT VALUE ENGINE
-# =================================================================
-def calculate_benefit_value(opp: Any) -> Dict[str, Any]:
-    """
-    Calculates the exact multi-dimensional value of an opportunity.
-    """
-    val = safe_float(get_field(opp, 'benefit_amount', 0.0))
-    b_type = str(get_field(opp, 'benefit_type', 'cash')).lower()
-    
-    financial = 0.0
-    indirect = 0.0
-    non_fin = []
-    
-    financial_types = ['cash', 'subsidy', 'grant', 'pension', 'scholarship', 'reimbursement', 'loan']
-    indirect_types = ['training', 'insurance', 'incubation', 'certification']
-    non_fin_types = ['mentorship', 'recognition', 'support']
-    
-    if any(t in b_type for t in financial_types) or val > 0:
-        financial = val
-    elif any(t in b_type for t in indirect_types):
-        indirect = val
-    elif any(t in b_type for t in non_fin_types):
-        non_fin.append(b_type.capitalize())
-        
-    exp = f"You are eligible for ₹{int(val):,} in {b_type} benefits." if val > 0 else f"You are eligible for {b_type} benefits."
-        
-    return {
-        "benefit_value": val,
-        "benefit_type": b_type.title(),
-        "financial_value": financial,
-        "indirect_value": indirect,
-        "non_financial_value": non_fin,
-        "explanation": exp
-    }
+class ValueForecast(BaseModel):
+    days_30: float
+    days_90: float
+    days_180: float
 
-# =================================================================
-# LAYER 2 — SAVINGS ENGINE
-# =================================================================
-def calculate_savings(opp: Any) -> Dict[str, Any]:
-    """
-    Calculates exact out-of-pocket money saved by claiming the opportunity.
-    """
-    market_cost = safe_float(get_field(opp, 'average_market_cost', 0.0))
-    benefit_val = safe_float(get_field(opp, 'benefit_amount', 0.0))
-    is_recurring = get_field(opp, 'is_recurring', False)
-    
-    # If explicitly passed as string 'True'/'1'
-    if isinstance(is_recurring, str) and is_recurring.lower() in ['true', '1', 'yes']:
-        is_recurring = True
-        
-    if market_cost > 0:
-        reduced = max(0.0, market_cost - benefit_val)
-        savings = market_cost - reduced
-    else:
-        # Implicit savings (the benefit itself acts as the savings)
-        reduced = 0.0
-        savings = benefit_val
-        market_cost = benefit_val
+class TopPriority(BaseModel):
+    name: str
+    value: float
+    reason: str
+    rank_score: float
 
-    annual = savings if is_recurring else 0.0
-    # Assuming standard 5-year outlook for recurring scheme lifetime savings if not explicitly defined
-    lifetime = annual * 5 if is_recurring else savings 
-    
-    exp = f"By claiming this, your out-of-pocket cost drops to ₹{int(reduced):,}, saving you ₹{int(savings):,}."
-    
-    return {
-        "current_cost": market_cost,
-        "reduced_cost": reduced,
-        "savings_value": savings,
-        "recurring_savings": savings if is_recurring else 0.0,
-        "annual_savings": annual,
-        "lifetime_savings": lifetime,
-        "explanation": exp
-    }
+class DocumentImpact(BaseModel):
+    document: str
+    blocked_value: float
 
-# =================================================================
-# LAYER 3 — MISSED OPPORTUNITY ENGINE
-# =================================================================
-def calculate_missed_opportunity(profile: Any, opp: Any) -> Dict[str, Any]:
-    """
-    Calculates the financial loss incurred by not applying earlier.
-    """
-    opp_name = get_field(opp, 'title', 'Unknown Scheme')
-    benefit_val = safe_float(get_field(opp, 'benefit_amount', 0.0))
-    
-    user_age = safe_float(get_field(profile, 'age', 0))
-    min_age = safe_float(get_field(opp, 'min_age', 0))
-    
-    launch_year = safe_float(get_field(opp, 'launch_year', 2020))
-    current_year = 2026
-    
-    is_recurring = get_field(opp, 'is_recurring', False)
-    if isinstance(is_recurring, str) and is_recurring.lower() in ['true', '1', 'yes']:
-        is_recurring = True
-        
-    years_missed = 0
-    if min_age > 0 and user_age > min_age:
-        # They became eligible when they hit min_age. 
-        # Capped by when the scheme actually launched.
-        years_eligible_by_age = user_age - min_age
-        years_since_launch = current_year - launch_year
-        years_missed = min(years_eligible_by_age, years_since_launch)
-        
-    # We only assume missed value for recurring schemes, or 1-time schemes if they never claimed it.
-    # For now, default to recurring loss.
-    missed_val = (years_missed * benefit_val) if is_recurring else 0.0
-    
-    reason = f"Did not apply since becoming eligible {int(years_missed)} years ago." if missed_val > 0 else ""
-    
-    return {
-        "opportunity_name": opp_name,
-        "eligible_since": str(int(current_year - years_missed)) if years_missed > 0 else str(current_year),
-        "benefit_value": benefit_val,
-        "missed_value": missed_val,
-        "reason_missed": reason,
-        "future_loss_risk": benefit_val
-    }
+class UserValueDashboard(BaseModel):
+    summary: ValueSummary
+    forecast: ValueForecast
+    top_priorities: List[TopPriority]
+    document_impacts: List[DocumentImpact]
 
-def aggregate_missed_values(missed_opps: List[Dict[str, Any]]) -> Dict[str, Any]:
+# ==========================================
+# 2. VALUE ENGINE
+# ==========================================
+class ValueEngine:
     """
-    Aggregates all missed values across multiple opportunities.
+    STAGE 14: The Value Engine
+    Translates Opportunities into Financial Velocity.
     """
-    hist = sum(o['missed_value'] for o in missed_opps)
-    future = sum(o['future_loss_risk'] for o in missed_opps)
-    
-    return {
-        "historical_missed_value": hist,
-        "current_missed_value": future, # Treating future risk as current liability
-        "future_risk_value": future,
-        "total_missed_value": hist + future
-    }
 
-# =================================================================
-# ACTION INTELLIGENCE & UNLOCK ENGINE (Previous Layers)
-# =================================================================
-def calculate_unlock_value(item_name: str, item_type: str, opps_unlocked: int, estimated_val: float) -> Dict[str, Any]:
-    return {
-        "item": item_name,
-        "type": item_type,
-        "opportunities_unlocked": opps_unlocked,
-        "estimated_unlock_value": estimated_val
-    }
+    def generate_value_summary(
+        self, 
+        eligible_opps: List[Dict[str, Any]], 
+        potential_opps: List[Dict[str, Any]], 
+        missed_opps: List[Dict[str, Any]], 
+        protected_opps: List[Dict[str, Any]],
+        missing_docs: List[str]
+    ) -> UserValueDashboard:
+        
+        # 1. Core State Calculators
+        eligible_value = sum(opp.get("financial_value", 0.0) for opp in eligible_opps)
+        potential_value = sum(opp.get("financial_value", 0.0) for opp in potential_opps)
+        protected_value = sum(opp.get("financial_value", 0.0) for opp in protected_opps)
+        missed_value = sum(opp.get("financial_value", 0.0) for opp in missed_opps)
+        
+        # Assume Recovery Value is 50% of Potential Value realistically achieved
+        recovery_value = potential_value * 0.5 
+        
+        total_opps = len(eligible_opps) + len(potential_opps) + len(protected_opps) + len(missed_opps)
 
-def generate_action_plan(actions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    processed_actions = []
-    
-    for act in actions:
-        dl_risk = act.get('deadline_risk', 'Low Risk')
-        dl_mult = 5
-        if dl_risk == 'High Risk': dl_mult = 50
-        elif dl_risk == 'Medium Risk': dl_mult = 20
-        elif dl_risk == 'Critical Risk': dl_mult = 0
+        # 2. Document Impact Engine
+        doc_impacts = self._calculate_document_impacts(missing_docs, potential_opps)
+
+        # 3. Value Prioritization Engine
+        top_priorities = self._calculate_priorities(eligible_opps + potential_opps)
+
+        # 4. Forecast Engine
+        forecast = self._calculate_forecast(eligible_value, recovery_value)
+
+        return UserValueDashboard(
+            summary=ValueSummary(
+                eligible_value=eligible_value,
+                potential_value=potential_value,
+                protected_value=protected_value,
+                missed_value=missed_value,
+                recovery_value=recovery_value,
+                total_opportunities=total_opps
+            ),
+            forecast=forecast,
+            top_priorities=top_priorities,
+            document_impacts=doc_impacts
+        )
+
+    # --- SUB ENGINES ---
+
+    def _calculate_document_impacts(self, missing_docs: List[str], potential_opps: List[Dict[str, Any]]) -> List[DocumentImpact]:
+        """Calculates exactly how much value is trapped behind each missing document."""
+        impacts = []
+        for doc in missing_docs:
+            blocked_val = 0.0
+            for opp in potential_opps:
+                if doc.lower() in [d.lower() for d in opp.get("required_documents", [])]:
+                    blocked_val += opp.get("financial_value", 0.0)
+            
+            if blocked_val > 0:
+                impacts.append(DocumentImpact(document=doc, blocked_value=blocked_val))
+                
+        # Sort by biggest blocker
+        impacts.sort(key=lambda x: x.blocked_value, reverse=True)
+        return impacts
+
+    def _calculate_priorities(self, opps: List[Dict[str, Any]]) -> List[TopPriority]:
+        """
+        Rank Score = (Financial Value * Probability * Readiness) / Difficulty
+        """
+        priorities = []
+        for opp in opps:
+            value = opp.get("financial_value", 0.0)
+            if value <= 0:
+                continue
+                
+            probability = 0.8 # Mock: probability of success
+            readiness = opp.get("readiness_score", 50.0) / 100.0
+            difficulty = 2.0 # Mock: 1 to 5 scale
+            
+            rank = (value * probability * readiness) / difficulty
+            
+            reason = ""
+            if readiness > 0.8:
+                reason = "High readiness, apply immediately."
+            else:
+                reason = "High value, complete missing documents."
+                
+            priorities.append(TopPriority(
+                name=opp.get("title", "Unknown Opportunity"),
+                value=value,
+                reason=reason,
+                rank_score=round(rank, 2)
+            ))
+            
+        priorities.sort(key=lambda x: x.rank_score, reverse=True)
+        return priorities[:5] # Return top 5
+
+    def _calculate_forecast(self, current_eligible: float, recovery_target: float) -> ValueForecast:
+        """Predicts the financial trajectory over time."""
+        # 30 Days: Assume user captures 30% of recovery value
+        d30 = current_eligible + (recovery_target * 0.30)
+        # 90 Days: Assume user captures 70% of recovery value
+        d90 = current_eligible + (recovery_target * 0.70)
+        # 180 Days: Assume full recovery + organic platform growth
+        d180 = current_eligible + recovery_target + (current_eligible * 0.10)
         
-        effort = act.get('effort', 'Medium')
-        effort_mult = 1.0
-        if effort == 'Low': effort_mult = 1.5
-        elif effort == 'High': effort_mult = 0.5
-        
-        unlock_val = act.get('unlock_value', 0.0)
-        opps = act.get('opps_unlocked', 0)
-        readiness_imp = act.get('readiness_improvement', 0.0)
-        
-        score = (unlock_val / 1000) * 0.40
-        score += (opps * 10) * 0.30
-        score += dl_mult * 0.20
-        score += readiness_imp * 0.10
-        score = score * effort_mult
-        
-        priority = "Low"
-        if score > 50: priority = "High"
-        elif score > 20: priority = "Medium"
-        if dl_risk == 'Critical Risk': priority = "Unfeasible"
-        
-        processed_actions.append({
-            "action": act["action"],
-            "priority": priority,
-            "numeric_score": round(score, 2),
-            "impact": f"Unlocks {opps} schemes",
-            "estimated_unlock_value": unlock_val,
-            "effort": effort,
-            "official_link": act.get("official_link", "")
-        })
-        
-    processed_actions.sort(key=lambda x: x["numeric_score"], reverse=True)
-    return processed_actions
+        return ValueForecast(
+            days_30=round(d30, 2),
+            days_90=round(d90, 2),
+            days_180=round(d180, 2)
+        )

@@ -1,29 +1,32 @@
 from fastapi import FastAPI
-from app.core.db import init_db
-from app.models import *  # This imports the __init__.py which registers all models
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
 
-# Initialize FastAPI App
-app = FastAPI(title="Udaan AI", version="1.0.0")
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        openapi_url=f"{settings.API_V1_STR}/openapi.json",
+        description="Udaan AI - 19 Engine Microservice Architecture"
+    )
 
-@app.on_event("startup")
-def on_startup():
-    print("Initializing Database...")
-    init_db()
-    print("Database Initialized.")
+    # Set all CORS enabled origins
+    if settings.BACKEND_CORS_ORIGINS:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to Udaan AI API"}
+    # Note: Routers will be included here via an api_router
+    # from app.api.v1.api import api_router
+    # app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Include Routers
-from app.api.routers.auth import router as auth_router
-from app.api.routers.profile import router as profile_router
-from app.api.routers.opportunities import router as opp_router
-from app.api.routers.wallet import router as wallet_router
-from app.api.routers.lifecycle import router as lifecycle_router
+    @app.get("/health")
+    def health_check():
+        return {"status": "healthy", "engines": 19}
 
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(profile_router, prefix="/api/v1")
-app.include_router(opp_router, prefix="/api/v1")
-app.include_router(wallet_router, prefix="/api/v1")
-app.include_router(lifecycle_router, prefix="/api/v1")
+    return app
+
+app = create_app()

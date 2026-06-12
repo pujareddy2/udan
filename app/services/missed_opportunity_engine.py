@@ -86,8 +86,18 @@ def detect_missed_opportunity(opp: Dict[str, Any], readiness: Dict[str, Any], cu
         "module": module,
         "benefit_value": val,
         "missed_type": m_type,
-        "confidence": conf
+        "confidence": conf,
+        "regret_hook": self.generate_regret_hook(title, val, opp.get("blocking_items", []), r_score) if not is_eligible else None
     }
+
+    def generate_regret_hook(self, title: str, value: float, missing_docs: List[str], readiness_score: float) -> str:
+        """
+        Creates the 'Regret Hook' - an explicit missed value notification.
+        """
+        doc_str = missing_docs[0] if missing_docs else "a required document"
+        val_str = f"₹{value:,.0f}" if value > 0 else "a major opportunity"
+        
+        return f"You missed {val_str} from {title} because your profile was {readiness_score}% ready but lacked your {doc_str}."
 
 # =================================================================
 # LAYER 2 — ROOT CAUSE ANALYSIS ENGINE
