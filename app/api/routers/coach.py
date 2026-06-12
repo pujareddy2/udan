@@ -1,20 +1,18 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
 
 router = APIRouter()
 
-class CoachRequest(BaseModel):
-    opportunity_id: int
-
-@router.post("/coach/generate", tags=["Application Coach"])
-def generate_coach_guidance(req: CoachRequest):
-    """Generate AI coaching steps for a specific application."""
+@router.get("/opportunities/{opportunity_id}/guidance", tags=["Coach"])
+def get_opportunity_guidance(opportunity_id: str):
     return {
-        "why_eligible": "Your income is below 2.5L and you have >60% in 12th.",
-        "approval_probability": 87,
-        "next_steps": [
-            "Gather your Income Certificate and Aadhaar.",
-            "Visit the portal and click 'New Registration'.",
-            "Fill the form and upload documents."
-        ]
+        "success": True,
+        "message": "Guidance retrieved successfully",
+        "why_apply": "High value scholarship",
+        "approval_probability": 89,
+        "documents_needed": [
+            "Income Certificate",
+            "Aadhaar Card"
+        ],
+        "estimated_time": "15 Minutes",
+        "next_action": "Upload Income Certificate"
     }

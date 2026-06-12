@@ -30,7 +30,8 @@ def create_app() -> FastAPI:
     # Include AI and Intelligence routers
     from app.api.routers import (
         eligibility, readiness, value, documents, notifications,
-        dashboard, ai_discovery, coach, intelligence, profile_context, search
+        dashboard, ai_discovery, coach, intelligence, profile_context, search,
+        voice_agent, timeline
     )
     app.include_router(eligibility.router, prefix="/api/v1")
     app.include_router(readiness.router, prefix="/api/v1")
@@ -43,10 +44,32 @@ def create_app() -> FastAPI:
     app.include_router(intelligence.router, prefix="/api/v1")
     app.include_router(profile_context.router, prefix="/api/v1")
     app.include_router(search.router, prefix="/api/v1")
+    app.include_router(voice_agent.router, prefix="/api/v1")
+    app.include_router(timeline.router, prefix="/api/v1")
     
     # Include Test Integrations router
     from app.api.routers import test_integration
     app.include_router(test_integration.router, prefix="/api/v1")
+
+    # Serve the Live Voice UI Dashboard
+    from fastapi.responses import HTMLResponse, JSONResponse
+    import os
+    @app.get("/voice", response_class=HTMLResponse, tags=["UI"])
+    def get_voice_ui():
+        file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "voice_demo.html")
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        return "<h1>Voice UI not found.</h1>"
+        
+    # Prevent confusing 404 logs in terminal for browser auto-requests
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return JSONResponse(content={})
+
+    @app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
+    def chrome_devtools():
+        return JSONResponse(content={})
 
     @app.get("/health")
     def health_check():

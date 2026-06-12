@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Udaan AI - Live Voice Agent</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #0f172a; color: white; padding: 50px; }
+        .mic-btn { width: 100px; height: 100px; border-radius: 50%; background: #3b82f6; border: none; font-size: 40px; cursor: pointer; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); transition: 0.3s; margin-top: 20px;}
+        .mic-btn:hover { transform: scale(1.05); }
+        .mic-btn.listening { background: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.8); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        #transcript { margin-top: 30px; font-size: 24px; color: #94a3b8; min-height: 50px; }
+        #aiResponse { margin-top: 30px; font-size: 28px; font-weight: bold; color: #10b981; }
+        .json-box { margin-top: 40px; background: #1e293b; padding: 20px; border-radius: 10px; text-align: left; font-family: monospace; white-space: pre-wrap; font-size: 14px; overflow-x: auto; color: #38bdf8; width: 80%; margin-left: auto; margin-right: auto;}
+    </style>
+</head>
+<body>
+    <h1>Udaan AI - Live Voice Agent 🎙️</h1>
+    <p>Select your language before speaking, so the microphone understands you properly.</p>
+    
+    <select id="langSelect" style="padding: 10px; font-size: 16px; border-radius: 5px; background: #1e293b; color: white; border: 1px solid #38bdf8; margin-right: 10px;">
+        <option value="en-IN">Microphone: English (India)</option>
+        <option value="te-IN">Microphone: Telugu (తెలుగు)</option>
+        <option value="hi-IN">Microphone: Hindi (हिंदी)</option>
+    </select>
+
+    <select id="voiceSelect" style="padding: 10px; font-size: 16px; border-radius: 5px; background: #1e293b; color: white; border: 1px solid #10b981; display: none;">
+        <option value="">AI Voice: Auto-Detect Best Quality Voice</option>
+    </select>
+    <br>
+    
+    <button id="micBtn" class="mic-btn">🎙️</button>
+    <div id="statusText" style="margin-top: 15px; color: #ef4444; font-weight: bold; height: 20px;"></div>
+    
+    <div id="chatBox" style="margin-top: 30px; background: #1e293b; padding: 20px; border-radius: 10px; text-align: left; width: 80%; margin-left: auto; margin-right: auto; height: 400px; overflow-y: auto;">
+        <div style="color: #94a3b8; font-style: italic;">Chat history will appear here...</div>
+    </div>
+    
+    <div id="jsonDebug" class="json-box" style="display: none;"></div>
+
+    <script>
+        const langSelect = document.getElementById('langSelect');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const statusText = document.getElementById('statusText');
+        const chatBox = document.getElementById('chatBox');
+        const jsonDebug = document.getElementById('jsonDebug');
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const synth = window.speechSynthesis;
+        
+        if (!SpeechRecognition) {
+            alert("Your browser doesn't support the Web Speech API. Please use Google Chrome or Microsoft Edge.");
+        }
+        
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        
+        let finalTranscript = '';
+        let chatHistory = []; // Stores the conversational memory
+        let isListening = false;
+        let availableVoices = [];
+        
+        function populateVoiceList() {
+            availableVoices = synth.getVoices();
+            voiceSelect.innerHTML = '<option value="">AI Voice: Auto-Detect Best Quality Voice</option>';
+            availableVoices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.textContent = voice.name + ' (' + voice.lang + ')';
+                option.value = i;
+                voiceSelect.appendChild(option);
+            });
+        }
+        populateVoiceList();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+
+        function getBestVoice(langCode, voices) {
+            let matchingVoices = voices.filter(v => v.lang.includes(langCode) || v.lang.includes(langCode.split('-')[0]));
+            if (matchingVoices.length === 0) return null;
+            
+            // Prioritize high-quality "Google" voices which sound very natural and clear
+            let googleVoice = matchingVoices.find(v => v.name.includes("Google"));
+            if (googleVoice) return googleVoice;
+            
+            // Prioritize soft female voices for a more pleasant, heart-touching experience
+            let femaleNames = ["Shruti", "Swara", "Heera", "Zira", "Aria", "Sonia", "Hazel"];
+            let femaleVoice = matchingVoices.find(v => femaleNames.some(name => v.name.includes(name)));
+            if (femaleVoice) return femaleVoice;
+            
+            return matchingVoices[0];
+        }
+
+        function appendMessage(role, text) {
+            if(chatBox.innerText.includes('Chat history will appear here')) {
+                chatBox.innerHTML = '';
+            }
+            const msgDiv = document.createElement('div');
+            msgDiv.style.margin = '10px 0';
+            msgDiv.style.padding = '15px';
+            msgDiv.style.borderRadius = '8px';
+            if (role === 'user') {
+                msgDiv.style.background = '#3b82f6';
+                msgDiv.style.marginLeft = '20%';
+            } else {
+                msgDiv.style.background = '#10b981';
+                msgDiv.style.marginRight = '20%';
+            }
+            msgDiv.innerText = text;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        micBtn.onclick = () => {
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            synth.cancel(); // Stop any current speech
+            finalTranscript = '';
+            statusText.innerText = 'Listening... Speak now, then click the mic again to send instantly!';
+            jsonDebug.style.display = 'none';
+            micBtn.classList.add('listening');
+            isListening = true;
+            
+            // Set exact language so the Microphone understands Telugu/Hindi
+            recognition.lang = langSelect.value;
+            
+            try {
+                recognition.start();
+            } catch(e) {}
+        };
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
+            }
+            statusText.innerText = '"' + (finalTranscript + interim) + '"';
+        };
+
+        recognition.onspeechend = () => {
+            if(isListening) {
+                recognition.stop();
+            }
+        };
+
+        recognition.onend = () => {
+            micBtn.classList.remove('listening');
+            isListening = false;
+            if (finalTranscript.trim().length > 0) {
+                statusText.innerText = "Processing in Udaan AI... 🤔";
+                appendMessage('user', finalTranscript);
+                sendToAgent(finalTranscript);
+                finalTranscript = '';
+            } else {
+                statusText.innerText = "Click the microphone and start speaking...";
+            }
+        };
+
+        recognition.onerror = (event) => {
+            micBtn.classList.remove('listening');
+            isListening = false;
+            statusText.innerText = "Microphone Error: " + event.error;
+        };
+
+        async function sendToAgent(text) {
+            try {
+                const response = await fetch("/api/v1/voice/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: text, history: chatHistory })
+                });
+                
+                const data = await response.json();
+                
+                statusText.innerText = "";
+                appendMessage('ai', data.spoken_response);
+                
+                // Add to history so LLM remembers next time
+                chatHistory.push({role: "user", content: text});
+                chatHistory.push({role: "assistant", content: JSON.stringify(data)});
+                
+                jsonDebug.innerText = JSON.stringify(data, null, 2);
+                jsonDebug.style.display = 'block';
+                
+                // Speak it out
+                const utterance = new SpeechSynthesisUtterance(data.spoken_response);
+                
+                if (voiceSelect.value !== "") {
+                    utterance.voice = availableVoices[voiceSelect.value];
+                } else {
+                    // Fallback Auto-Detection Logic
+                    let langCode = 'en-US';
+                    if(data.detected_language && data.detected_language.toLowerCase() === 'telugu') {
+                        langCode = 'te-IN';
+                    } else if(data.detected_language && data.detected_language.toLowerCase() === 'hindi') {
+                        langCode = 'hi-IN';
+                    }
+                    utterance.lang = langCode;
+                    
+                    let bestVoice = getBestVoice(langCode, availableVoices);
+                    if (bestVoice) {
+                        utterance.voice = bestVoice;
+                    }
+                }
+
+                synth.speak(utterance);
+                
+            } catch (err) {
+                statusText.innerText = "Server Error. Check terminal logs.";
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

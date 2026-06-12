@@ -4,18 +4,22 @@ from pydantic import BaseModel
 router = APIRouter()
 
 class ProfileContextRequest(BaseModel):
-    user_id: int
+    user_id: str
 
-@router.post("/profile-context/generate", tags=["Profile Context"])
+@router.post("/profile-context/generate", tags=["Profile Context Engine"])
 def generate_profile_context(req: ProfileContextRequest):
-    """Generate the AI persona and context from the user's profile."""
-    return {"message": "Profile context generated successfully."}
-
-@router.get("/profile-context/{user_id}", tags=["Profile Context"])
-def get_profile_context(user_id: int):
-    """Get the AI persona and context for a user."""
     return {
-        "persona": "Small Farmer",
-        "keywords": ["agriculture", "subsidy", "irrigation"],
-        "categories": ["Farmer", "Rural", "Financial Support"]
+        "persona": "Engineering Student",
+        "intent": "Scholarships and Internships",
+        "keywords": [
+            "engineering scholarship",
+            "internships",
+            "hackathons"
+        ],
+        "opportunity_categories": [
+            "Scholarships",
+            "Internships",
+            "Research Programs",
+            "Hackathons"
+        ]
     }

@@ -1,33 +1,54 @@
-from fastapi import APIRouter, File, UploadFile
-from typing import List
+from fastapi import APIRouter
 
 router = APIRouter()
 
-@router.get("/documents", tags=["Document Intelligence"])
-def list_documents():
-    """List all documents for the user."""
-    return {"documents": ["Aadhaar Card", "Income Certificate"]}
-
-@router.post("/documents/upload", tags=["Document Intelligence"])
-def upload_document(file: UploadFile = File(...)):
-    """Upload a new document."""
-    return {"message": f"Successfully uploaded {file.filename}", "document_name": file.filename}
-
-@router.get("/documents/{document_name}", tags=["Document Intelligence"])
-def get_document_details(document_name: str):
-    """Get specific details, status, or extracted text of a document."""
+@router.get("/{module}/documents/summary", tags=["Documents"])
+def get_module_documents_summary(module: str):
     return {
-        "document_name": document_name,
-        "status": "Verified",
-        "extracted_fields": {"name": "Test User", "id_number": "1234 5678 9012"}
+        "success": True,
+        "message": f"Document summary for {module}",
+        "available_documents": 5,
+        "missing_documents": 2,
+        "expired_documents": 1,
+        "required_documents": [
+            "Income Certificate",
+            "Aadhaar Card"
+        ]
     }
 
-@router.get("/documents/recovery-guide/{document_name}", tags=["Document Intelligence"])
-def get_document_recovery_guide(document_name: str):
-    """Get offline/online instructions for obtaining a missing document."""
+@router.get("/documents/{document_name}", tags=["Documents"])
+def get_document_details(document_name: str):
     return {
-        "document_name": document_name,
-        "online_process": "Visit the portal, login, and click apply.",
-        "offline_process": "Visit the nearest Tehsil office with your ID proof.",
-        "estimated_time": "15 days"
+        "success": True,
+        "message": "Document details retrieved",
+        "name": document_name,
+        "sample_image": "https://example.com/sample_income.jpg",
+        "purpose": "Income Verification",
+        "authority": "MeeSeva",
+        "validity": "1 Year",
+        "required_supporting_docs": [
+            "Aadhaar Card",
+            "Ration Card"
+        ]
+    }
+
+@router.get("/documents/{document_name}/recovery-guide", tags=["Documents"])
+def get_document_recovery_guide(document_name: str):
+    return {
+        "success": True,
+        "message": "Recovery guide retrieved",
+        "document": document_name,
+        "authority": "MeeSeva",
+        "apply_link": "https://ts.meeseva.telangana.gov.in/",
+        "processing_time": "7 Days",
+        "required_documents": [
+            "Aadhaar Card"
+        ],
+        "steps": [
+            "Visit MeeSeva portal",
+            "Fill the application form",
+            "Upload Aadhaar",
+            "Pay fee",
+            "Wait 7 days"
+        ]
     }

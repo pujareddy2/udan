@@ -75,6 +75,12 @@ uvicorn app.main:app --reload
 ```
 *(Note: The server will automatically generate the `data/udaan_v2.db` SQLite database file on its first run!)*
 
+### 6. Run the Frontend
+Udaan AI uses a standalone HTML file for its frontend interface. To use it:
+1. Ensure the backend server is running locally (Step 5).
+2. Open the file `UDAAN AI (standalone).html` directly in your web browser (Chrome, Edge, Safari, Firefox, etc.).
+3. You can now register, login, and explore the AI features!
+
 ---
 
 ## 📚 API Documentation

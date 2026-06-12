@@ -5,13 +5,34 @@ from typing import List, Optional, Dict, Any
 router = APIRouter()
 
 class StudentProfile(BaseModel):
-    education_level: str
-    current_course: str
-    institution_type: str
+    college_name: str
+    university: str
+    degree: str
+    branch: str
+    specialization: str
+    current_year: int
+    graduation_year: int
+    cgpa: float
+    percentage: float
+    state: str
+    district: str
+    category: str
+    special_category: str
     annual_family_income: float
-    previous_year_marks_percentage: float
-    is_orphan: bool = False
-    is_disabled: bool = False
+    family_size: int
+    documents: List[str] = []
+    opportunity_interests: List[str] = []
+    smartphone: bool = False
+    internet_access: bool = False
+    tenth_percentage: float
+    twelfth_percentage: float
+    diploma_percentage: Optional[float] = None
+    skills: List[str] = []
+    certifications: List[str] = []
+    projects: List[str] = []
+    hackathons: List[str] = []
+    research_papers: List[str] = []
+    career_goals: List[str] = []
 
 class FarmerProfile(BaseModel):
     land_size_acres: float
@@ -22,12 +43,22 @@ class FarmerProfile(BaseModel):
     annual_income: float
 
 class JobSeekerProfile(BaseModel):
-    education_level: str
-    skills: List[str]
-    employment_status: str
-    years_of_experience: float = 0.0
-    preferred_job_role: str
-    is_disabled: bool = False
+    highest_qualification: str
+    degree: str
+    branch: str
+    graduation_year: int
+    cgpa: float
+    category: str
+    annual_family_income: float
+    skills: List[str] = []
+    experience_years: float = 0.0
+    internships: List[str] = []
+    projects: List[str] = []
+    certifications: List[str] = []
+    preferred_job_type: List[str] = []
+    preferred_location: List[str] = []
+    expected_salary: float
+    documents: List[str] = []
 
 class EntrepreneurProfile(BaseModel):
     business_type: str
@@ -62,12 +93,64 @@ class SeniorCitizenProfile(BaseModel):
     is_disabled: bool = False
 
 @router.get("/profile/{user_id}/{role}/status", tags=["Profile"])
-def get_profile_status(user_id: int, role: str):
+def get_profile_status(user_id: str, role: str):
     """Get profile completion % and missing fields."""
-    return {"completion_percentage": 100, "missing_fields": []}
+    if role == "student":
+        return {
+            "completion_percentage": 84,
+            "fields_completed": 45,
+            "total_fields": 53,
+            "documents_ready": 4,
+            "documents_required": 7,
+            "skills_count": 8,
+            "interests_count": 4,
+            "profile_strength": "Strong",
+            "missing_fields": [
+                "income_certificate",
+                "cgpa"
+            ]
+        }
+    elif role == "jobseeker":
+        return {
+            "completion_percentage": 84,
+            "profile_strength": "Strong",
+            "skills_count": 8,
+            "documents_ready": 4,
+            "experience_score": 70,
+            "missing_fields": [
+                "resume",
+                "expected_salary"
+            ]
+        }
+    return {
+        "completion_percentage": 18,
+        "next_page": f"{role}_profile"
+    }
 
 @router.put("/profile/{user_id}/{role}", tags=["Profile"])
-def update_role_profile(user_id: int, role: str, profile_data: Dict[str, Any]):
+def update_role_profile(user_id: str, role: str, profile_data: Dict[str, Any]):
     """Update role-specific profile (triggers AI engines)."""
-    # In a real app we'd validate profile_data against the correct Pydantic model
+    if role == "student":
+        return {
+            "success": True,
+            "user_id": user_id,
+            "role": "student",
+            "completion_percentage": 84,
+            "profile_strength": "Strong",
+            "documents_ready": len(profile_data.get("documents", [])) if "documents" in profile_data else 4,
+            "skills_count": len(profile_data.get("skills", [])) if "skills" in profile_data else 8,
+            "interests_count": len(profile_data.get("opportunity_interests", [])) if "opportunity_interests" in profile_data else 4,
+            "next_step": "dashboard"
+        }
+    elif role == "jobseeker":
+        return {
+            "success": True,
+            "user_id": user_id,
+            "role": "jobseeker",
+            "completion_percentage": 84,
+            "profile_strength": "Strong",
+            "documents_ready": len(profile_data.get("documents", [])) if "documents" in profile_data else 4,
+            "skills_count": len(profile_data.get("skills", [])) if "skills" in profile_data else 8,
+            "next_step": "dashboard"
+        }
     return {"message": f"{role} profile updated successfully."}

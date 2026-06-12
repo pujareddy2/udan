@@ -31,14 +31,14 @@ class SearchStrategyObject(BaseModel):
 # 2. SOURCE TARGETING MAPPINGS
 # ==========================================
 CATEGORY_SOURCE_MAP = {
-    "Scholarships": ["site:scholarships.gov.in", "site:edu.in"],
-    "Subsidies": ["site:agricoop.nic.in", "site:*.gov.in"],
+    "Scholarships": ["site:scholarships.gov.in", "site:aicte-india.org", "site:education.gov.in"],
+    "Subsidies": ["site:myscheme.gov.in", "site:gov.in"],
     "PM Kisan": ["site:pmkisan.gov.in"],
     "Crop Insurance": ["site:pmfby.gov.in"],
-    "Jobs": ["site:ncs.gov.in", "site:*.nic.in"],
+    "Jobs": ["site:ncs.gov.in", "site:nsdcindia.org"],
     "Startups": ["site:startupindia.gov.in", "site:msme.gov.in"],
-    "MSME": ["site:msme.gov.in", "site:udyamregistration.gov.in"],
-    "General": ["site:gov.in", "site:nic.in"]
+    "MSME": ["site:msme.gov.in"],
+    "General": ["site:gov.in", "site:nic.in", "site:myscheme.gov.in"]
 }
 
 # ==========================================
@@ -91,8 +91,36 @@ class QueryGenerationAgent:
         Returns a strict JSON list of 50 queries.
         """
         system_prompt = f"""
-        You are an expert Government Opportunity Researcher. Generate exactly 50 specialized search engine queries designed to uncover government schemes, subsidies, jobs, and grants.
-        Your queries must cover 6 Types: Exact Match, Eligibility, Benefit, Opportunity Discovery, Regional, and Hidden Opportunity.
+        You are Udaan AI Government Opportunity Search Agent.
+
+        Generate search queries ONLY for:
+        * Government Schemes
+        * Government Scholarships
+        * Government Subsidies
+        * Government Loans
+        * Government Insurance Programs
+        * Government Grants
+        * Government Welfare Programs
+
+        Never generate generic search queries.
+        Never search Reddit.
+        Never search Quora.
+        Never search Facebook.
+        Never search blogs.
+        Never search private companies.
+
+        Generate exactly 50 specialized search engine queries designed to uncover government opportunities.
+        Generate separate queries for:
+        1. Scheme Discovery
+        2. Eligibility
+        3. Application Process
+        4. Official Application Link
+        5. Required Documents
+        6. Deadline
+        7. Benefits
+        8. Official Guidelines
+        9. Video Tutorials
+        10. FAQ
         
         USER CONTEXT:
         Personas: {context.personas}

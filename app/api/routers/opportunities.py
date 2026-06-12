@@ -1,45 +1,41 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 router = APIRouter()
 
-# Note: In a real app, these endpoints would be protected by a JWT auth dependency.
-# For scaffolding, we will simulate it.
-
-@router.get("/opportunities/eligible", tags=["Opportunities"])
-def get_eligible_opportunities():
-    """Get schemes user is currently eligible for."""
-    return [
-        {
-            "id": 1,
-            "title": "NSP Central Sector",
-            "benefit_value": 12000.0,
-            "deadline": "2025-03-31",
-            "tags": ["Scholarship", "Student"]
-        }
-    ]
-
-@router.get("/opportunities/recommended", tags=["Opportunities"])
-def get_recommended_opportunities():
-    """Get schemes user can unlock with more documents (Near Miss)."""
-    return [
-        {
-            "id": 5,
-            "title": "PM-KISAN",
-            "benefit_value": 6000.0,
-            "tags": ["Farmer", "Income Support"]
-        }
-    ]
-
-@router.get("/opportunities/{opportunity_id}", tags=["Opportunities"])
-def get_opportunity_details(opportunity_id: int):
-    """Deep-dive details for a specific scheme."""
+def _get_mock_opportunities(role: str):
     return {
-        "id": opportunity_id,
-        "title": "NSP",
-        "benefit_value": 12000.0,
-        "tags": ["Scholarship"],
-        "description": "National Scholarship Portal scheme...",
-        "eligibility_rules": {"age": {"max": 25}, "income": {"max": 250000}},
-        "required_documents": ["Aadhaar Card", "Income Certificate"],
-        "followup_questions": ["What is your institution's AISHE code?"]
+        "success": True,
+        "message": f"Opportunities summary for {role}",
+        "total": 12,
+        "eligible": 7,
+        "potential": 3,
+        "blocked": 2
     }
+
+@router.get("/student/opportunities/summary", tags=["Opportunities"])
+def get_student_opportunities():
+    return _get_mock_opportunities("student")
+
+@router.get("/farmer/opportunities/summary", tags=["Opportunities"])
+def get_farmer_opportunities():
+    return _get_mock_opportunities("farmer")
+
+@router.get("/jobseeker/opportunities/summary", tags=["Opportunities"])
+def get_jobseeker_opportunities():
+    return _get_mock_opportunities("jobseeker")
+
+@router.get("/entrepreneur/opportunities/summary", tags=["Opportunities"])
+def get_entrepreneur_opportunities():
+    return _get_mock_opportunities("entrepreneur")
+
+@router.get("/women-entrepreneur/opportunities/summary", tags=["Opportunities"])
+def get_women_entrepreneur_opportunities():
+    return _get_mock_opportunities("women-entrepreneur")
+
+@router.get("/startup/opportunities/summary", tags=["Opportunities"])
+def get_startup_opportunities():
+    return _get_mock_opportunities("startup")
+
+@router.get("/senior-citizen/opportunities/summary", tags=["Opportunities"])
+def get_senior_citizen_opportunities():
+    return _get_mock_opportunities("senior-citizen")

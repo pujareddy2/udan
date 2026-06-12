@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UDAAN AI</title>
+
+<!-- Persona videos are referenced as JS strings in data.js — lift them for the bundler -->
+
+
+
+
+<style>/* Astra Design System — global stylesheet entry point.
+   Consumers link THIS file. It is a manifest of @import lines only. */
+
+/* Astra — Webfonts
+   Both families are Google Fonts (free, open-license), loaded from Google's CDN.
+   Instrument Serif ships an italic (ital@1) — the brand uses italic everywhere.
+   Barlow is loaded at 300/400/500/600.
+
+   NOTE: These are CDN-linked rather than self-hosted binaries. If you need
+   fully offline / self-hosted fonts, download the .woff2 files from Google Fonts
+   and replace this @import with local @font-face rules. */
+
+/* vietnamese */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("2b65d014-6aef-415e-9e5f-7892f3647f09") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("9415c8e0-ffe8-4127-bbf9-ce055094f25c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("c1177fdb-44f1-4b77-a562-ab70a189db16") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("54daf56c-d579-44f0-92bf-0c96948920e3") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ac5daa55-80ad-40d6-9d6e-46ebd6a0c2cf") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("279419f1-f7b2-41b4-a95a-a09cbd9961ce") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("60ce1d65-25b5-42fb-a708-2a70ab87150e") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2bef35c9-21c0-4884-9bea-d25e4090e936") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d40b18d1-742a-4bb9-84be-2a5a12e7ae00") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("026c77f5-2c9c-43db-9179-20456b9b3a04") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1f55ad34-05cf-40fc-9b0a-3bfc0c8b52c3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Barlow';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("075fbaf2-8f94-4a4c-ae8d-f5cdd9f4c562") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("b6fa2c48-6d15-4ddf-9987-47881e84457b") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("29507e1a-b0b6-48ca-a489-2eb7a50e9662") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("071c068e-c48e-4774-bcc9-3fa7b090753c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1601bfb8-d63e-41bc-abba-2082b3d79a01") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
+/* Astra — Color tokens
+   The palette is deliberately monochrome: a pure-black void, white type,
+   and translucent white "liquid glass" chrome. No greens, no gradients.
+   Contrast comes from glass borders + blur over cinematic video, never overlays. */
+
+:root {
+  /* ---- Base ---- */
+  --color-black: #000000;
+  --color-white: #ffffff;
+
+  /* White at the opacities actually used across the brand */
+  --color-white-90: rgba(255, 255, 255, 0.9);
+  --color-white-80: rgba(255, 255, 255, 0.8);
+  --color-white-50: rgba(255, 255, 255, 0.5);
+  --color-white-15: rgba(255, 255, 255, 0.15);
+  --color-white-10: rgba(255, 255, 255, 0.1);
+  --color-white-01: rgba(255, 255, 255, 0.01);
+
+  /* Inverse — the one solid surface in the system (white pill button) */
+  --color-inverse-surface: #ffffff;
+  --color-inverse-text: #000000;
+
+  /* ---- Glass material tints ---- */
+  --glass-fill: rgba(255, 255, 255, 0.01);
+  --glass-highlight-top: rgba(255, 255, 255, 0.45);
+  --glass-highlight-mid: rgba(255, 255, 255, 0.15);
+  --glass-inner-line: rgba(255, 255, 255, 0.1);
+  --glass-inner-line-strong: rgba(255, 255, 255, 0.15);
+
+  /* ---- Semantic aliases ---- */
+  --surface-page: var(--color-black);
+  --text-strong: var(--color-white);
+  --text-body: var(--color-white-90);
+  --text-muted: var(--color-white-80);
+  --on-inverse: var(--color-inverse-text);
+}
+
+/* Astra — Typography tokens
+   Two families only:
+   - Instrument Serif, ALWAYS used italic, for display/headings (the lowercase "a" logo too)
+   - Barlow, for all body copy, links, labels, tags
+   Heading sets tight tracking (negative) and very tight leading for a cinematic title feel. */
+
+:root {
+  /* ---- Families ---- */
+  --font-heading: "Instrument Serif", serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+
+  /* ---- Weights (Barlow) ---- */
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ---- Display sizes (Instrument Serif, italic) ---- */
+  --text-hero: 5.5rem;        /* hero headline (lg) */
+  --text-section: 6rem;       /* capabilities heading (lg) */
+  --text-display: 3.75rem;    /* 6xl */
+  --text-stat: 2.25rem;       /* stat number (4xl) */
+  --text-card-title: 2.25rem; /* card titles (3xl/4xl) */
+  --text-partner: 1.875rem;   /* partner wordmarks (3xl) */
+
+  /* ---- Body sizes (Barlow) ---- */
+  --text-base: 1rem;
+  --text-sm: 0.875rem;
+  --text-xs: 0.75rem;
+  --text-2xs: 0.6875rem;      /* 11px — card tags */
+
+  /* ---- Leading ---- */
+  --leading-title: 0.8;       /* hero headline */
+  --leading-section: 0.9;     /* capabilities heading */
+  --leading-none: 1;
+  --leading-snug: 1.375;
+  --leading-tight: 1.1;
+
+  /* ---- Tracking ---- */
+  --tracking-hero: -4px;
+  --tracking-section: -3px;
+  --tracking-tight-1: -1px;
+}
+
+/* Astra — Effects, radii, spacing & the liquid-glass material
+   The signature of the system. Two glass variants:
+   - .liquid-glass         subtle 4px blur — nav, chips, cards, tags
+   - .liquid-glass-strong  heavy 50px blur — primary CTA only
+   Both render a 1.4px gradient "rim light" via a masked ::before. */
+
+:root {
+  /* ---- Radii ---- */
+  --radius-pill: 9999px;       /* bare `rounded` in this system = pill */
+  --radius-card: 1.25rem;      /* glass cards, stat cards */
+  --radius-tile: 0.75rem;      /* nested icon tiles inside cards */
+
+  /* ---- Blur ---- */
+  --blur-glass: 4px;
+  --blur-glass-strong: 50px;
+
+  /* ---- Glass rim + shadow ---- */
+  --glass-rim-width: 1.4px;
+  --shadow-glass: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  --shadow-glass-strong: 4px 4px 4px rgba(0, 0, 0, 0.05),
+                         inset 0 1px 1px rgba(255, 255, 255, 0.15);
+
+  /* ---- Motion ---- */
+  /* video crossfade duration */
+  --fade-ms: 500ms; /* @kind other */
+  /* seconds before `ended` to begin fade-out */
+  --fade-out-lead: 0.55s; /* @kind other */
+  /* entrance easing */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+
+  /* ---- Spacing scale (Tailwind-aligned, the steps actually used) ---- */
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-16: 4rem;
+}
+
+/* ============================================================
+   Liquid glass — subtle
+   ============================================================ */
+.liquid-glass {
+  background: var(--glass-fill);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  border: none;
+  box-shadow: var(--shadow-glass);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--glass-rim-width);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Liquid glass — strong (heavier blur, used for primary CTA)
+   ============================================================ */
+.liquid-glass-strong {
+  background: var(--glass-fill);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(var(--blur-glass-strong));
+  -webkit-backdrop-filter: blur(var(--blur-glass-strong));
+  border: none;
+  box-shadow: var(--shadow-glass-strong);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-strong::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--glass-rim-width);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.2) 80%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+</style>
+<style>/* UDAAN AI — auth & landing pages. Astra glass language over a full-bleed video.
+   Plain HTML (no React) so these load instantly; they share the design-system
+   tokens/fonts/glass classes from styles.css. */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; }
+body { font-family: var(--font-body); color: #fff; }
+
+/* ---- Background video ---- */
+.bg-video {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  min-width: 100%; min-height: 100%; width: auto; height: auto;
+  object-fit: cover; z-index: 0;
+}
+.bg-scrim {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 18%,
+              rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.7) 100%);
+}
+
+/* ---- Top nav ---- */
+.nav {
+  position: fixed; top: 1rem; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.5rem; gap: 1rem;
+}
+.brand { display: flex; align-items: center; gap: 0.6rem; padding: 0.4rem 0.95rem 0.4rem 0.4rem; }
+.brand-mark {
+  width: 40px; height: 40px; border-radius: 9999px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-style: italic; font-size: 1.5rem; color: #fff; line-height: 1;
+}
+.brand-name { font-weight: 600; font-size: 0.95rem; letter-spacing: 0.3px; white-space: nowrap; }
+.brand-name b { font-weight: 700; }
+
+.nav-links { display: flex; align-items: center; gap: 0.25rem; padding: 0.375rem; }
+.nav-links a {
+  text-decoration: none; color: rgba(255,255,255,0.9); font-weight: 500; font-size: var(--text-sm);
+  padding: 0.5rem 0.95rem; border-radius: 9999px; transition: background 150ms ease, color 150ms ease;
+  white-space: nowrap;
+}
+.nav-links a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.nav-links a.active { background: #fff; color: #000; }
+
+.nav-toggle {
+  display: flex; align-items: center; gap: 0.55rem; padding: 0.55rem 1rem; cursor: pointer; border: none;
+  color: #fff; font-family: var(--font-body); font-weight: 500; font-size: var(--text-sm);
+}
+.nav-toggle svg { display: block; }
+
+/* ---- Generic glass helpers reused from DS: .liquid-glass / .liquid-glass-strong ---- */
+.center-wrap {
+  position: relative; z-index: 10; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 7rem 1.5rem 5rem;
+}
+
+/* ---- Landing hero ---- */
+.hero-logo {
+  font-family: var(--font-heading); font-weight: 400; color: #fff;
+  font-size: clamp(3.5rem, 11vw, 8.5rem); line-height: 0.9; letter-spacing: 0.04em;
+  margin: 0; text-shadow: 0 6px 40px rgba(0,0,0,0.45);
+}
+.hero-rule { width: clamp(180px, 32vw, 360px); height: 2px; background: rgba(255,255,255,0.6);
+  margin: 1.5rem auto; border: none; }
+.hero-desc {
+  max-width: 46rem; font-size: clamp(1rem, 1.5vw, 1.2rem); font-weight: 300; line-height: 1.55;
+  color: rgba(255,255,255,0.94); margin: 0 auto;
+}
+.hero-actions { display: flex; flex-wrap: wrap; gap: 1.1rem; justify-content: center; margin-top: 2.5rem; }
+
+.side-label {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 10;
+  display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.85);
+  font-family: var(--font-heading); font-style: italic; font-size: clamp(1.1rem, 2vw, 1.75rem);
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5); pointer-events: none;
+}
+.side-label.left { left: clamp(1rem, 4vw, 4rem); }
+.side-label.right { right: clamp(1rem, 4vw, 4rem); }
+@media (max-width: 1080px) { .side-label { display: none; } }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: var(--radius-pill); font-family: var(--font-body); font-weight: 600;
+  font-size: 1rem; line-height: 1; cursor: pointer; text-decoration: none; border: none;
+  padding: 0.95rem 2.4rem; transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+.btn-white { background: #fff; color: #111; box-shadow: 0 10px 30px rgba(0,0,0,0.28); }
+.btn-white:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(0,0,0,0.36); }
+.btn-glass { color: #fff; }
+.btn-glass:hover { transform: translateY(-2px); }
+.btn-block { width: 100%; }
+
+/* ---- Footer ---- */
+.footer {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.85rem 1.5rem;
+  font-size: var(--text-sm); color: rgba(255,255,255,0.85);
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.45) 100%);
+}
+.footer b { font-weight: 700; color: #fff; }
+
+/* ---- Auth cards (login / register) ---- */
+.auth-shell {
+  position: relative; z-index: 10; min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; padding: 6.5rem 1.5rem 2.5rem;
+}
+.auth-card { width: 100%; border-radius: var(--radius-card); padding: clamp(1.75rem, 4vw, 2.75rem); }
+.auth-card.sm { max-width: 420px; }
+.auth-card.lg { max-width: 720px; }
+
+.auth-head { text-align: center; margin-bottom: 1.75rem; }
+.auth-title {
+  font-family: var(--font-heading); font-style: italic; color: #fff; margin: 0;
+  font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1; letter-spacing: -1px;
+}
+.auth-sub { margin: 0.6rem 0 0; font-weight: 300; font-size: 0.95rem; color: rgba(255,255,255,0.85); }
+
+/* segmented login/register switch */
+.auth-switch { display: flex; gap: 0.25rem; padding: 0.35rem; margin: 0 auto 1.75rem; width: fit-content; }
+.auth-switch a {
+  text-decoration: none; color: rgba(255,255,255,0.85); font-weight: 600; font-size: 0.95rem;
+  padding: 0.55rem 1.6rem; border-radius: 9999px; transition: all 150ms ease;
+}
+.auth-switch a.on { background: #fff; color: #111; }
+
+/* form fields */
+.field { display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1.1rem; }
+.field label { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.9); letter-spacing: 0.2px; }
+.control {
+  width: 100%; border-radius: 0.85rem; border: 1px solid rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.12); color: #fff; font-family: var(--font-body);
+  font-size: 0.98rem; padding: 0.8rem 1rem; outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.control::placeholder { color: rgba(255,255,255,0.55); }
+.control:focus { border-color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.18); }
+select.control { appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.9rem center; padding-right: 2.6rem; }
+select.control option { color: #111; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+.grid-3 { display: grid; grid-template-columns: 0.7fr 0.9fr 1.4fr; gap: 0 1rem; }
+@media (max-width: 560px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+.auth-note {
+  display: flex; align-items: center; gap: 0.6rem; border-radius: 9999px;
+  padding: 0.6rem 1rem; margin: -0.5rem 0 1.4rem; font-size: 0.85rem; font-weight: 400;
+  color: rgba(255,255,255,0.92); font-family: var(--font-body);
+}
+.auth-note-dot {
+  width: 8px; height: 8px; border-radius: 9999px; flex: 0 0 auto; background: #7fe0a0;
+  box-shadow: 0 0 0 3px rgba(127,224,160,0.22);
+}
+.auth-note-error { color: #fff; }
+.auth-note-error .auth-note-dot { background: #ff8c8c; box-shadow: 0 0 0 3px rgba(255,140,140,0.24); }
+.auth-foot { margin-top: 0.5rem; text-align: center; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+.auth-foot a { color: #fff; font-weight: 600; text-decoration: none; }
+.auth-foot a:hover { text-decoration: underline; }
+
+.cat-hint { margin-top: 0.55rem; font-size: 0.82rem; font-weight: 300; color: rgba(255,255,255,0.7); }
+</style>
+
+<script>
+  // suppress benign Framer Motion list-key dev warnings
+  const __origError = console.error;
+  console.error = function (...a) {
+    if (typeof a[0] === "string" && a[0].includes('unique "key"')) return;
+    __origError.apply(console, a);
+  };
+</script>
+<script src="2274b39a-922f-4d48-9074-1ade6a78c88a" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="9941f81a-1f56-4954-a07b-e2bfd0b4fee0" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="2dc124a0-49c6-4e4f-9563-b4fa8c45f523" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="6acd488d-6718-4350-ac2f-1f1910afbebe"></script>
+<script>window.Motion = window.FramerMotion || window.Motion;</script>
+<!-- Astra design-system bundle (plain JS; reads the React global) -->
+<script src="07655296-db8e-4d39-9de5-16c8bad5e86d"></script>
+
+<style>
+  html, body { margin: 0; height: 100%; background: #000; }
+  .spa-view { display: none; }
+  .spa-view.active { display: block; }
+
+  /* dashboard video reveal (no mount animation that could stick black) */
+  .udaan-bgvideo { opacity: 1; }
+  #udaan-scroll { scrollbar-width: none; }
+  #udaan-scroll::-webkit-scrollbar { width: 0; height: 0; }
+  .udaan-lift { transition: transform 240ms cubic-bezier(0,0,0.2,1), box-shadow 240ms ease; }
+  .udaan-lift:hover { transform: translateY(-6px); }
+  .udaan-icon-btn { width: 40px; height: 40px; border-radius: 9999px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; position: relative; }
+  .udaan-dot { position: absolute; top: 9px; right: 10px; width: 7px; height: 7px; border-radius: 9999px;
+    background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,0.35); }
+  .udaan-fab { position: fixed; right: 26px; bottom: 26px; z-index: 60;
+    width: 62px; height: 62px; border-radius: 9999px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; }
+  .udaan-fab::after { content: ""; position: absolute; inset: 0; border-radius: 9999px;
+    border: 2px solid rgba(255,255,255,0.55); animation: udaan-pulse 2.4s ease-out infinite; }
+  @keyframes udaan-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.7); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .udaan-fab::after { animation: none; } }
+
+  @keyframes udaan-rise { from { transform: translateY(20px); } to { transform: none; } }
+  .udaan-profile-sheet { animation: udaan-rise 0.35s cubic-bezier(0,0,0.2,1); }
+  @media (prefers-reduced-motion: reduce) { .udaan-profile-sheet { animation: none; } }
+</style>
+
+
+</head>
+<body>
+  <!-- Shared balloons background (landing / login / register) -->
+  <video id="bg-balloons" class="bg-video" src="e2e52018-6a56-476d-9442-21db11419404" autoplay="" muted="" loop="" playsinline="" preload="auto"></video>
+  <div id="bg-scrim" class="bg-scrim"></div>
+
+  <!-- Shared top nav for the auth views -->
+  <nav id="auth-nav" class="nav">
+    <a class="brand liquid-glass" href="#" style="border-radius:9999px;text-decoration:none;color:#fff;">
+      <span class="brand-mark liquid-glass-strong">u</span>
+      <span class="brand-name"><b>UDAAN</b> AI</span>
+    </a>
+    <div class="nav-links liquid-glass" style="border-radius:9999px;">
+      <a href="#" class="active">Home</a>
+      <a href="#">About Us</a>
+      <a href="#">Features</a>
+    </div>
+    <button class="nav-toggle liquid-glass" style="border-radius:9999px;" aria-label="Toggle menu">
+      <span>Menu</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+    </button>
+  </nav>
+
+  <!-- ===== LANDING ===== -->
+  <section id="view-landing" class="spa-view">
+    <div class="side-label left">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 6l-6 6 6 6M5 12h14"></path></svg>
+      <span>Empower</span>
+    </div>
+    <div class="side-label right">
+      <span>Accelerate</span>
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 6l6 6-6 6M19 12H5"></path></svg>
+    </div>
+    <main class="center-wrap">
+      <h1 class="hero-logo">UDAAN&nbsp;AI</h1>
+      <hr class="hero-rule">
+      <p class="hero-desc">
+        Udaan AI helps you discover and claim the government and career opportunities you're actually
+        eligible for — scholarships, schemes, jobs, and benefits you might be missing. Just tell us about
+        yourself in your own language, and we'll instantly show what's yours, why you qualify, and how to
+        claim it, every step from an official, verified source.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-white" href="#login">Login</a>
+        <a class="btn btn-glass liquid-glass-strong" href="#register">Register</a>
+      </div>
+    </main>
+    <footer id="auth-footer" class="footer">
+      <span>©</span>
+      <span><b>UDAAN AI</b> &nbsp;|&nbsp; Empowering your future through AI. All rights reserved.</span>
+    </footer>
+  </section>
+
+  <!-- ===== LOGIN ===== -->
+  <section id="view-login" class="spa-view">
+    <div class="auth-shell">
+      <div class="auth-card sm liquid-glass-strong">
+        <div class="auth-switch liquid-glass" style="border-radius:9999px;">
+          <a href="#login" class="on">Login</a>
+          <a href="#register">Register</a>
+        </div>
+        <div class="auth-head">
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-sub">Log in to see the opportunities matched to you.</p>
+        </div>
+        <div id="registered-note" class="auth-note liquid-glass" hidden="">
+          <span class="auth-note-dot"></span>
+          <span>Account created. Log in to open your dashboard.</span>
+        </div>
+        <div id="login-error" class="auth-note auth-note-error liquid-glass" hidden="">
+          <span class="auth-note-dot"></span>
+          <span id="login-error-text">Username or password is incorrect.</span>
+        </div>
+        <form id="login-form">
+          <div class="field">
+            <label for="email">Email Address</label>
+            <input class="control" id="email" type="email" placeholder="you@example.com" required="">
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input class="control" id="password" type="password" placeholder="••••••••" required="">
+          </div>
+          <button class="btn btn-white btn-block" type="submit" style="margin-top:0.5rem;">Login</button>
+        </form>
+        <p class="auth-foot">New to UDAAN AI? <a href="#register">Create an account</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REGISTER ===== -->
+  <section id="view-register" class="spa-view">
+    <div class="auth-shell">
+      <div class="auth-card lg liquid-glass-strong">
+        <div class="auth-switch liquid-glass" style="border-radius:9999px;">
+          <a href="#login">Login</a>
+          <a href="#register" class="on">Register</a>
+        </div>
+        <div class="auth-head">
+          <h1 class="auth-title">Create your account</h1>
+          <p class="auth-sub">Tell us a little about yourself and we'll match what's yours.</p>
+        </div>
+        <form id="register-form">
+          <div class="field">
+            <label for="fullname">Full Name</label>
+            <input class="control" id="fullname" type="text" placeholder="e.g. Aanya Kumar" required="">
+          </div>
+          <div class="field">
+            <label for="reg-email">Email</label>
+            <input class="control" id="reg-email" type="email" placeholder="you@example.com" required="">
+          </div>
+          <div class="field">
+            <label for="phone">Phone Number</label>
+            <input class="control" id="phone" type="tel" placeholder="+91 ..." required="">
+          </div>
+          <div class="field">
+            <label for="reg-password">Password</label>
+            <input class="control" id="reg-password" type="password" placeholder="Create a password" autocomplete="new-password" minlength="4" required="">
+            <span class="cat-hint">You'll use your email &amp; password to log in.</span>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="dob">Date of Birth</label>
+              <input class="control" id="dob" type="date">
+            </div>
+            <div class="field">
+              <label for="gender">Gender</label>
+              <select class="control" id="gender">
+                <option value="" disabled="" selected="">Select</option>
+                <option>Female</option>
+                <option>Male</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label for="state">State</label>
+              <input class="control" id="state" type="text" placeholder="e.g. Telangana">
+            </div>
+            <div class="field">
+              <label for="district">District</label>
+              <input class="control" id="district" type="text" placeholder="e.g. Hyderabad">
+            </div>
+          </div>
+          <div class="field">
+            <label for="category">Select Category</label>
+            <select class="control" id="category" required="">
+              <option value="" disabled="" selected="">Choose your category</option>
+              <option value="students">Students</option>
+              <option value="farmers">Farmers</option>
+              <option value="jobseekers">Job Seekers</option>
+              <option value="entrepreneur">Entrepreneur</option>
+              <option value="women_entrepreneur">Women Entrepreneur</option>
+              <option value="startup">Startup</option>
+              <option value="senior_citizen">Senior Citizen</option>
+            </select>
+            <span class="cat-hint">This decides which dashboard opens after you register.</span>
+          </div>
+          <button class="btn btn-white btn-block" type="submit" style="margin-top:0.75rem;">Register</button>
+        </form>
+        <p class="auth-foot">Already have an account? <a href="#login">Login</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DASHBOARD (React) ===== -->
+  <section id="view-dashboard" class="spa-view">
+    <div id="dash-root"></div>
+  </section>
+
+  <!-- App scripts -->
+  <script src="68bb7126-d744-4b6f-a0bf-a718510a5474"></script>
+  <script src="4f088cda-a00e-40fa-90c8-2eb2398d268b"></script>
+  <script src="c33aa38d-654c-4053-bad9-41e46538669f"></script>
+  <script type="text/babel" src="7bda01d1-13f7-459d-b016-642c524e4ae4"></script>
+  <script type="text/babel" src="615a609b-2f33-4430-bf48-494bb7f47957"></script>
+  <script type="text/babel" src="b7e1da8a-a516-4d12-aab4-e9383c107ecf"></script>
+  <script>
+    (function () {
+      var dashRoot = null;
+      function mountDash() {
+        if (!dashRoot) dashRoot = ReactDOM.createRoot(document.getElementById("dash-root"));
+        dashRoot.render(React.createElement(window.UdaanDashboard, { key: window.__startPersona || "students" }));
+      }
+      function setView(name, persona) {
+        document.querySelectorAll(".spa-view").forEach(function (v) { v.classList.remove("active"); });
+        document.getElementById("view-" + name).classList.add("active");
+        var isDash = name === "dashboard";
+        document.getElementById("bg-balloons").style.display = isDash ? "none" : "";
+        document.getElementById("bg-scrim").style.display = isDash ? "none" : "";
+        document.getElementById("auth-nav").style.display = isDash ? "none" : "";
+        if (name === "login") {
+          // Reflect a just-completed registration; reset any prior error.
+          var note = document.getElementById("registered-note");
+          var err = document.getElementById("login-error");
+          if (err) err.hidden = true;
+          if (note) note.hidden = !window.__justRegistered;
+          if (window.__justRegistered) {
+            try {
+              var c = JSON.parse(localStorage.getItem("udaan_credentials") || "null");
+              if (c && c.username) document.getElementById("username").value = c.username;
+            } catch (e) {}
+          }
+        }
+        if (isDash) { window.__startPersona = persona || window.__startPersona || "students"; mountDash(); }
+        window.scrollTo(0, 0);
+      }
+      function route() {
+        var h = location.hash.replace(/^#\/?/, "");
+        if (h.indexOf("dashboard") === 0) { setView("dashboard", h.split("/")[1]); }
+        else if (h === "login") { setView("login"); }
+        else if (h === "register") { setView("register"); }
+        else { setView("landing"); }
+      }
+      window.addEventListener("hashchange", route);
+
+      // form handlers
+      function showLoginError(msg) {
+        document.getElementById("login-error-text").textContent = msg;
+        document.getElementById("login-error").hidden = false;
+        document.getElementById("registered-note").hidden = true;
+      }
+      document.getElementById("login-form").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var u = document.getElementById("email").value.trim();
+        var p = document.getElementById("password").value;
+        
+        try {
+          var res = await fetch("http://localhost:8000/api/v1/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: u, password: p })
+          });
+          
+          if (!res.ok) {
+            showLoginError("Login failed. Please check your credentials.");
+            return;
+          }
+          
+          var data = await res.json();
+          var payload = data.data || data;
+          
+          if (payload.access_token) {
+             localStorage.setItem("token", payload.access_token);
+             localStorage.setItem("user_id", payload.user_id);
+             localStorage.setItem("role", payload.role);
+             
+             // Fetch completion status
+             var statusRes = await fetch("http://localhost:8000/api/v1/profile/" + payload.user_id + "/" + payload.role + "/status", {
+               headers: { "Authorization": "Bearer " + payload.access_token }
+             });
+             if (statusRes.ok) {
+               var sData = await statusRes.json();
+               var sPayload = sData.data || sData;
+               var comp = sPayload.completion_percentage !== undefined ? sPayload.completion_percentage : sPayload.completion;
+               
+               if (comp === 100) {
+                 window.__startPersona = payload.role;
+                 location.hash = "#dashboard/" + payload.role;
+               } else {
+                 location.hash = "#profile-completion";
+               }
+             } else {
+               showLoginError("Failed to fetch profile status.");
+             }
+          } else {
+             showLoginError("Invalid login response.");
+          }
+        } catch (err) {
+          showLoginError("Network error: Backend might not be running.");
+        }
+      });
+      document.getElementById("register-form").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
+        var email = val("reg-email");
+        var password = document.getElementById("reg-password").value;
+        var cat = val("category") || "students";
+        
+        try {
+          var regRes = await fetch("http://localhost:8000/api/v1/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, password: password })
+          });
+          
+          if (!regRes.ok) {
+            alert("Registration failed. Email might be in use.");
+            return;
+          }
+          var regData = await regRes.json();
+          var userId = regData.data ? regData.data.user_id : regData.user_id;
+          
+          await fetch("http://localhost:8000/api/v1/auth/" + userId + "/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              full_name: val("fullname"),
+              mobile_number: val("phone"),
+              gender: val("gender"),
+              date_of_birth: val("dob"),
+              state: val("state"),
+              district: val("district"),
+              preferred_language: "English"
+            })
+          });
+          
+          await fetch("http://localhost:8000/api/v1/auth/" + userId + "/role", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: cat })
+          });
+          
+          window.__startPersona = cat;
+          location.hash = "#profile-completion";
+          
+        } catch (err) {
+          alert("Network error during registration.");
+        }
+      });
+
+      // wait for React + Babel-compiled components, then route
+      (function ready() {
+        if (window.AstraDesignSystem_bf0882 && window.Motion && window.UdaanDashboard && window.UdaanIcon && window.UdaanProfile && window.UDAAN_BUILD_PROFILE && window.UDAAN_PROFILE_SCHEMA) {
+          route();
+        } else { setTimeout(ready, 50); }
+      })();
+    })();
+  </script>
+
+
+</body></html>
