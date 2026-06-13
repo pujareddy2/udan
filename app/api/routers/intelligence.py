@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.domain import FarmerProfile
-
+from app.models.domain import FarmerProfile, UserProfile, Opportunity, Document
+from app.services.eligibility import EligibilityEngine
 from pydantic import BaseModel
+import json
 
 router = APIRouter()
 
@@ -68,25 +69,60 @@ def get_farmer_services():
 @router.get("/farmer/recommendations", tags=["Intelligence"])
 def get_farmer_recommendations(user_id: int = None, session: Session = Depends(get_session)):
     recs = []
+    engine = EligibilityEngine()
     
     if user_id:
+        user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
         farmer_profile = session.exec(select(FarmerProfile).where(FarmerProfile.user_id == user_id)).first()
-        if farmer_profile and farmer_profile.land_size_acres > 0:
-            recs.append({
-                "scheme": "Rythu Bandhu",
-                "benefit": f"₹{10000 * farmer_profile.land_size_acres}",
-                "confidence": 95,
-                "reason": f"{farmer_profile.land_size_acres} acres {farmer_profile.land_type} land"
-            })
+        user_docs_records = session.exec(select(Document).where(Document.user_id == user_id)).all()
+        user_docs = [d.document_master.document_name for d in user_docs_records if d.document_master and d.status == "Verified"] if user_docs_records else []
+        
+        if user_profile and farmer_profile:
+            # Build user dict
+            user_dict = {
+                "id": user_id,
+                "income": farmer_profile.annual_income,
+                "age": user_profile.age,
+                "category": user_profile.category,
+                "state": user_profile.state,
+                "land_area": farmer_profile.land_size_acres,
+                "gender": user_profile.gender
+            }
             
-    # Default fallback
+            # Get farmer opportunities
+            opps = session.exec(select(Opportunity).where(Opportunity.module == "farmer")).all()
+            for opp in opps:
+                rules = opp.eligibility_rules if isinstance(opp.eligibility_rules, dict) else (json.loads(opp.eligibility_rules) if opp.eligibility_rules else {})
+                docs = opp.required_documents if isinstance(opp.required_documents, list) else (json.loads(opp.required_documents) if opp.required_documents else [])
+                
+                opp_dict = {
+                    "id": opp.id,
+                    "title": opp.title,
+                    "eligibility_rules": rules,
+                    "required_documents": docs
+                }
+                
+                verdict = engine.evaluate_single_eligibility(user_dict, user_docs, opp_dict)
+                
+                if verdict.verdict in ["Eligible", "Potentially Eligible", "Needs Clarification"]:
+                    recs.append({
+                        "id": opp.id,
+                        "scheme": opp.title,
+                        "benefit": f"₹{opp.benefit_value:,.0f}",
+                        "confidence": int(verdict.eligibility_score),
+                        "reason": verdict.eligibility_explanation,
+                        "missing_docs": verdict.missing_documents,
+                        "status": verdict.verdict,
+                        "description": opp.description,
+                        "benefit_summary": opp.benefit_summary,
+                        "apply_link": opp.apply_link,
+                        "opportunity_type": opp.opportunity_type
+                    })
+            
+    # Remove hardcoded fallback to enforce dynamic rules
     if not recs:
-        recs.append({
-            "scheme": "PM Kisan",
-            "benefit": "₹6000",
-            "confidence": 90,
-            "reason": "Registered Farmer"
-        })
+        # Just return empty if no real opportunities match
+        pass
         
     return {
         "recommendations": recs

@@ -60,8 +60,8 @@ class EligibilityEngine:
             checks.append(self.check_state(user.get("state"), rules["state"]))
         if "cgpa_min" in rules:
             checks.append(self.check_cgpa(user.get("cgpa"), rules["cgpa_min"]))
-        if "land_area_max" in rules:
-            checks.append(self.check_land(user.get("land_area"), rules["land_area_max"]))
+        if "land_area_max" in rules or "land_area_min" in rules:
+            checks.append(self.check_land(user.get("land_area"), rules.get("land_area_min"), rules.get("land_area_max")))
         if "dpiit_required" in rules:
             checks.append(self.check_dpiit(user.get("is_dpiit_registered"), rules["dpiit_required"]))
             
@@ -205,10 +205,16 @@ class EligibilityEngine:
         passed = user_val >= rule_min
         return EligibilityCheckResult(passed=passed, missing=False, weight=20.0, message="CGPA check")
 
-    def check_land(self, user_val: Optional[float], rule_max: float) -> EligibilityCheckResult:
+    def check_land(self, user_val: Optional[float], rule_min: Optional[float], rule_max: Optional[float]) -> EligibilityCheckResult:
         if user_val is None:
             return EligibilityCheckResult(passed=False, missing=True, weight=20.0, message="Land area missing", missing_field="land_area")
-        passed = user_val <= rule_max
+        
+        passed = True
+        if rule_min is not None and user_val < rule_min:
+            passed = False
+        if rule_max is not None and user_val > rule_max:
+            passed = False
+            
         return EligibilityCheckResult(passed=passed, missing=False, weight=20.0, message="Land check")
 
     def check_dpiit(self, user_val: Optional[bool], required: bool) -> EligibilityCheckResult:

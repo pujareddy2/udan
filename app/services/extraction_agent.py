@@ -1,6 +1,9 @@
 import json
+import requests
+from bs4 import BeautifulSoup
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, ValidationError
+from app.core.config import settings
 
 # ==========================================
 # 1. OUTPUT SCHEMAS
@@ -41,7 +44,7 @@ class ExtractedOpportunity(BaseModel):
 class OpportunityExtractionAgent:
     """
     STAGE 6: Opportunity Extraction Agent
-    Uses Gemini to scrape raw HTML into deterministic Pydantic objects.
+    Uses HTTP scraping and Groq API to extract raw HTML into deterministic Pydantic objects.
     """
     
     def process_extraction_queue(self, raw_opportunities: List[Dict[str, Any]]) -> List[ExtractedOpportunity]:
@@ -51,17 +54,25 @@ class OpportunityExtractionAgent:
         extracted_results = []
         
         for raw_opp in raw_opportunities:
-            # Step 1: Mock content fetching (in reality, an HTTP GET/Puppeteer scrape)
-            scraped_content = self._fetch_web_content(raw_opp.get("source_url", ""))
+            source_url = raw_opp.get("source_url", "")
+            if not source_url:
+                continue
+
+            # Step 1: Live content fetching
+            scraped_content = self._fetch_web_content(source_url)
+            if not scraped_content:
+                print(f"Skipping {source_url} due to scrape failure.")
+                continue
             
             # Step 2: Clean content
             clean_text = self._clean_content(scraped_content)
             
-            # Step 3 & 4: Call Gemini & Validate Schema
-            extracted_json = self._extract_with_gemini(clean_text)
+            # Step 3 & 4: Call Groq API & Validate Schema
+            extracted_json = self._extract_with_groq(clean_text)
             
             if not extracted_json:
                 # Handle total LLM failure
+                print(f"Skipping {source_url} due to LLM extraction failure.")
                 continue
                 
             try:
@@ -76,78 +87,146 @@ class OpportunityExtractionAgent:
                     extracted_results.append(opportunity)
                 else:
                     # Log to manual review queue
-                    pass
+                    print(f"Opportunity {source_url} requires manual review (Confidence: {opportunity.confidence_metrics['overall_confidence']})")
                     
             except ValidationError as e:
                 # In production, trigger a Retry Prompt here
-                print(f"Pydantic Validation Error: {e}")
+                print(f"Pydantic Validation Error for {source_url}: {e}")
                 
         return extracted_results
 
     def _fetch_web_content(self, url: str) -> str:
-        """Simulates an HTTP fetch."""
-        return "Apply for the TS State Farmer Scheme. Must be resident of Telangana. 10000 rupees subsidy."
+        """Fetches HTTP content from the given URL using Playwright headless browser to bypass JS checks."""
+        try:
+            from playwright.sync_api import sync_playwright
+            from playwright_stealth import Stealth
+            
+            html_content = ""
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=False)
+                page = browser.new_page(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                )
+                
+                # Apply stealth mode
+                stealth = Stealth()
+                stealth.apply_stealth_sync(page)
+                
+                # Navigate and wait for network to be idle to ensure JS framework loading
+                page.goto(url, wait_until="networkidle", timeout=30000)
+                
+                html_content = page.content()
+                browser.close()
+            
+            # Parse HTML and extract text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Remove scripts and styles
+            for script in soup(["script", "style", "nav", "header", "footer"]):
+                script.extract()
+                
+            text = soup.get_text(separator=' ', strip=True)
+            return text
+        except Exception as e:
+            print(f"Failed to fetch content from {url} with Playwright: {e}")
+            return ""
 
     def _clean_content(self, text: str) -> str:
-        """Truncates string to 15k characters to prevent token explosion."""
+        """Truncates string to 15k characters to prevent context length issues."""
         return text[:15000]
 
-    def _extract_with_gemini(self, clean_text: str) -> Optional[Dict[str, Any]]:
+    def _extract_with_groq(self, clean_text: str) -> Optional[Dict[str, Any]]:
         """
-        Mock implementation of the Gemini API call using Structured Outputs.
+        Calls the live Groq Chat Completions API with structured JSON output.
         """
-        system_prompt = """
-        You are an expert Government Scheme Extractor. Your task is to analyze the provided web text and extract the scheme's details into STRICT JSON. 
-        You must accurately identify hidden eligibility constraints (e.g., "Only for SC/ST", "Only for Telangana residents").
+        api_key = settings.GROQ_API_KEY
+        if not api_key:
+            print("GROQ_API_KEY not found in settings")
+            return None
 
-        If a field is completely missing from the text, return null. Do NOT hallucinate.
-        """
-        # In production: google-genai structured output call.
-        
-        return {
-            "opportunity_title": "Telangana State Farmer Subsidy",
-            "scheme_name": "TS Farmer Scheme",
-            "provider_name": "Government of Telangana",
-            "description": "Financial assistance to farmers.",
-            "opportunity_type": "Subsidy",
+        # Describe the schema clearly
+        schema_instruction = """
+        You must output EXACTLY a JSON object matching this schema. Do NOT wrap it in markdown. Do NOT hallucinate.
+        {
+            "opportunity_title": "string",
+            "scheme_name": "string",
+            "provider_name": "string",
+            "description": "string",
+            "opportunity_type": "string",
             "benefits": {
-                "financial_value": 10000.0,
-                "benefit_summary": "10000 rupees subsidy"
+                "financial_value": float or null,
+                "benefit_summary": "string"
             },
             "eligibility": {
-                "age_requirements": None,
-                "income_limits": None,
-                "category_restrictions": [],
-                "location_requirements": ["Telangana"],
-                "hidden_requirements": ["Must be registered farmer"]
+                "age_requirements": "string" or null,
+                "income_limits": float or null,
+                "category_restrictions": ["string"],
+                "location_requirements": ["string"],
+                "hidden_requirements": ["string"]
             },
             "documents": {
-                "required": ["Aadhaar", "Land Passbook"],
-                "optional": []
+                "required": ["string"],
+                "optional": ["string"]
             },
             "deadlines": {
-                "application_deadline": "2026-12-31",
-                "is_active": "true"
+                "application_deadline": "string" or null,
+                "is_active": "string" or null
             },
             "application": {
-                "apply_link": "https://agricoop.telangana.gov.in/apply",
-                "offline_process": None
+                "apply_link": "string" or null,
+                "offline_process": "string" or null
             },
             "contact": {
-                "phone": "1800-111-222",
-                "email": None
+                "phone": "string" or null,
+                "email": "string" or null
             },
             "confidence_metrics": {
-                "overall_confidence": 95.0,
-                "missing_critical_fields": []
+                "overall_confidence": float (0.0 to 100.0),
+                "missing_critical_fields": ["string"]
             },
             "follow_up_questions": [
                 {
-                    "question": "Do you possess a valid Land Passbook?",
-                    "targets_field": "documents"
+                    "question": "string",
+                    "targets_field": "string"
                 }
             ]
         }
+        """
+
+        system_prompt = f"""
+        You are an expert Government Scheme Extractor. Your task is to analyze the provided web text and extract the scheme's details into STRICT JSON. 
+        You must accurately identify hidden eligibility constraints (e.g., "Only for SC/ST", "Only for Telangana residents").
+        If a field is completely missing from the text, return null (for strings/floats) or an empty array (for lists). 
+
+        {schema_instruction}
+        """
+
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Extract the following web text:\n\n{clean_text}"}
+            ],
+            "response_format": {"type": "json_object"},
+            "temperature": 0.0
+        }
+
+        try:
+            resp = requests.post(url, headers=headers, json=payload, timeout=30)
+            if resp.status_code != 200:
+                print(f"Groq API Error {resp.status_code}: {resp.text}")
+            resp.raise_for_status()
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
+            return json.loads(content)
+        except Exception as e:
+            print(f"Groq Extraction API failed: {e}")
+            return None
 
     def _recalculate_confidence(self, opp: ExtractedOpportunity) -> ExtractedOpportunity:
         """Applies mathematical penalties to the LLM's raw confidence score."""

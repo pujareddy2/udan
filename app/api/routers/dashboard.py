@@ -12,6 +12,9 @@ def get_farmer_dashboard(user_id: int, session: Session = Depends(get_session)):
     
     farmer_name = user_profile.full_name if user_profile else "Farmer"
     
+    from app.services.eligibility import EligibilityEngine
+    import json
+    
     # Calculate profile completion based on non-null fields in profile data
     completion = 20 # Base completion for registering
     if user_profile:
@@ -19,39 +22,62 @@ def get_farmer_dashboard(user_id: int, session: Session = Depends(get_session)):
     if farmer_profile:
         completion += 32
         
+    user_docs_records = session.exec(select(Document).where(Document.user_id == user_id)).all()
+    user_docs = [d.document_master.document_name for d in user_docs_records if d.document_master and d.status == "Verified"] if user_docs_records else []
+    
     documents_missing = 0
-    if user_profile and user_profile.profile_data:
-        docs = user_profile.profile_data.get("documents", [])
-        # If they don't have Aadhaar and Land Passbook, missing
-        if "Aadhaar" not in docs: documents_missing += 1
-        if "Land Passbook" not in docs: documents_missing += 1
+    if "Aadhaar card" not in user_docs and "Aadhaar" not in user_docs: documents_missing += 1
+    if "Bank account details" not in user_docs and "Bank Passbook" not in user_docs: documents_missing += 1
         
-    top_recommendation = "PM Kisan"
+    top_recommendation = "No current recommendations"
     potential_value = 0
     eligible_opportunities = 0
     blocked_opportunities = 0
     
-    if farmer_profile:
-        if farmer_profile.land_size_acres > 0:
-            top_recommendation = "Rythu Bandhu"
-            potential_value += 10000 * farmer_profile.land_size_acres
-            eligible_opportunities += 1
-        else:
-            top_recommendation = "PM Kisan"
-            potential_value += 6000
-            eligible_opportunities += 1
-            
-    if documents_missing > 0:
-        blocked_opportunities += documents_missing
+    if user_profile and farmer_profile:
+        engine = EligibilityEngine()
+        user_dict = {
+            "id": user_id,
+            "income": farmer_profile.annual_income,
+            "age": user_profile.age,
+            "category": user_profile.category,
+            "state": user_profile.state,
+            "land_area": farmer_profile.land_size_acres,
+            "gender": user_profile.gender
+        }
         
+        opps = session.exec(select(Opportunity).where(Opportunity.module == "farmer")).all()
+        for opp in opps:
+            rules = opp.eligibility_rules if isinstance(opp.eligibility_rules, dict) else (json.loads(opp.eligibility_rules) if opp.eligibility_rules else {})
+            docs = opp.required_documents if isinstance(opp.required_documents, list) else (json.loads(opp.required_documents) if opp.required_documents else [])
+            
+            opp_dict = {
+                "id": opp.id,
+                "title": opp.title,
+                "eligibility_rules": rules,
+                "required_documents": docs
+            }
+            
+            verdict = engine.evaluate_single_eligibility(user_dict, user_docs, opp_dict)
+            
+            if verdict.verdict in ["Eligible", "Potentially Eligible"]:
+                eligible_opportunities += 1
+                potential_value += opp.benefit_value or 0
+                
+                if top_recommendation == "No current recommendations" or (opp.benefit_value and opp.benefit_value > 0):
+                    top_recommendation = opp.title
+                    
+            if verdict.verdict == "Needs Clarification" or len(verdict.missing_documents) > 0:
+                blocked_opportunities += 1
+                
     return {
         "farmer_name": farmer_name,
         "profile_completion": min(100, completion),
-        "readiness_score": 84 - (documents_missing * 10),
-        "eligible_opportunities": eligible_opportunities + 5,
+        "readiness_score": max(0, 84 - (documents_missing * 10)),
+        "eligible_opportunities": eligible_opportunities,
         "blocked_opportunities": blocked_opportunities,
-        "potential_value": potential_value + 50000,
-        "approval_score": 88 - (documents_missing * 5),
+        "potential_value": potential_value,
+        "approval_score": max(0, 88 - (documents_missing * 5)),
         "documents_missing": documents_missing,
         "top_recommendation": top_recommendation
     }

@@ -11,3 +11,6 @@ passlib
 python-multipart
 pydantic[email]
 bcrypt
+beautifulsoup4==4.12.3
+playwright
+playwright-stealth

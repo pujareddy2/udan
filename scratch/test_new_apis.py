@@ -1,35 +1,40 @@
-import httpx
+import os
+import sys
 import json
+from sqlmodel import Session, select
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-base_url = "http://localhost:8000/api/v1"
+from app.core.db import get_session
+from app.models.domain import Opportunity, FarmerProfile, UserProfile, Document
+from app.services.eligibility import EligibilityEngine
 
-def test():
-    print("Testing /health...")
-    r = httpx.get("http://localhost:8000/health")
-    print(r.status_code, r.json())
+engine = EligibilityEngine()
+session = next(get_session())
+user_id = 10
+farmer_profile = session.exec(select(FarmerProfile).where(FarmerProfile.user_id==user_id)).first()
+user_profile = session.exec(select(UserProfile).where(UserProfile.user_id==user_id)).first()
 
-    print("\nTesting /opportunities/recommended...")
-    r = httpx.get(f"{base_url}/opportunities/recommended?user_id=5")
-    print(r.status_code)
-    print(json.dumps(r.json(), indent=2)[:1000])
+user_dict = {
+    'id': user_id,
+    'income': farmer_profile.annual_income,
+    'age': user_profile.age,
+    'category': user_profile.category,
+    'state': user_profile.state,
+    'land_area': farmer_profile.land_size_acres,
+    'gender': user_profile.gender
+}
 
-    print("\nTesting /jobseeker/roadmap...")
-    r = httpx.get(f"{base_url}/jobseeker/roadmap?user_id=5")
-    print(r.status_code, r.json())
-
-    print("\nTesting /scam/scan flagged...")
-    payload = {
-        "text": "Earn Rs 5000 daily working from home! Join our Telegram group. Refundable security deposit of Rs 1500 mandatory."
+opps = session.exec(select(Opportunity).where(Opportunity.module=='farmer')).all()
+for opp in opps:
+    rules = opp.eligibility_rules if isinstance(opp.eligibility_rules, dict) else (json.loads(opp.eligibility_rules) if opp.eligibility_rules else {})
+    docs = opp.required_documents if isinstance(opp.required_documents, list) else (json.loads(opp.required_documents) if opp.required_documents else [])
+    
+    opp_dict = {
+        'id': opp.id,
+        'title': opp.title,
+        'eligibility_rules': rules,
+        'required_documents': docs
     }
-    r = httpx.post(f"{base_url}/scam/scan", json=payload)
-    print(r.status_code, r.json())
-
-    print("\nTesting /scam/scan safe...")
-    payload = {
-        "text": "Senior Software Engineer needed for full-time role at Google. Proficiency in Python and SQL required."
-    }
-    r = httpx.post(f"{base_url}/scam/scan", json=payload)
-    print(r.status_code, r.json())
-
-if __name__ == "__main__":
-    test()
+    
+    verdict = engine.evaluate_single_eligibility(user_dict, [], opp_dict)
+    print(verdict)

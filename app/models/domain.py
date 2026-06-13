@@ -82,6 +82,12 @@ class Opportunity(SQLModel, table=True):
     provider_type: str = Field(default="government") # government, private
     state_target: str = Field(default="central", index=True)
     
+    # Rich scraping details
+    description: Optional[str] = Field(default=None)
+    benefit_summary: Optional[str] = Field(default=None)
+    apply_link: Optional[str] = Field(default=None)
+    opportunity_type: Optional[str] = Field(default=None)
+    
     # JSON for dynamic rules
     eligibility_rules: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     required_documents: List[str] = Field(default_factory=list, sa_column=Column(JSON))
