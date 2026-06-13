@@ -86,23 +86,58 @@ function EditField({ field, value, onChange }) {
 
 function MultiEditor({ section, selected, onToggle }) {
   const sel = selected || [];
+  const [customVal, setCustomVal] = useState("");
+  const addCustom = () => {
+    const v = customVal.trim();
+    if (v && sel.indexOf(v) === -1) { onToggle(section.id, v); }
+    setCustomVal("");
+  };
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-      {section.options.map((o) => {
-        const on = sel.indexOf(o) !== -1;
-        return (
-          <button key={o} type="button" onClick={() => onToggle(section.id, o)}
-            className={on ? "liquid-glass-strong" : ""} style={{ cursor: "pointer", borderRadius: "9999px",
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        {section.options.map((o) => {
+          const on = sel.indexOf(o) !== -1;
+          return (
+            <button key={o} type="button" onClick={() => onToggle(section.id, o)}
+              className={on ? "liquid-glass-strong" : ""} style={{ cursor: "pointer", borderRadius: "9999px",
+                padding: "0.4rem 0.9rem", fontFamily: "var(--font-body)", fontSize: "0.8rem",
+                fontWeight: on ? 600 : 400, color: on ? "#fff" : "rgba(255,255,255,0.7)",
+                border: on ? "none" : "1px solid rgba(255,255,255,0.22)", background: on ? undefined : "transparent" }}>
+              {o}
+            </button>
+          );
+        })}
+        {/* show custom chips that aren't in the predefined options */}
+        {sel.filter((s) => section.options.indexOf(s) === -1).map((c) => (
+          <button key={c} type="button" onClick={() => onToggle(section.id, c)}
+            className="liquid-glass-strong" style={{ cursor: "pointer", borderRadius: "9999px",
               padding: "0.4rem 0.9rem", fontFamily: "var(--font-body)", fontSize: "0.8rem",
-              fontWeight: on ? 600 : 400, color: on ? "#fff" : "rgba(255,255,255,0.7)",
-              border: on ? "none" : "1px solid rgba(255,255,255,0.22)", background: on ? undefined : "transparent" }}>
-            {o}
+              fontWeight: 600, color: "#fff", border: "none" }}>
+            {c} ×
           </button>
-        );
-      })}
+        ))}
+      </div>
+      {section.customInput && (
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <input type="text" value={customVal} placeholder="+ Add your own"
+            onChange={(e) => setCustomVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+            style={Object.assign({}, inputStyle, { flex: 1, maxWidth: "240px", borderRadius: "9999px",
+              padding: "0.4rem 0.85rem", fontSize: "0.82rem" })} />
+          {customVal.trim() && (
+            <button type="button" onClick={addCustom}
+              className="liquid-glass-strong udaan-lift" style={{ cursor: "pointer", border: "none",
+                borderRadius: "9999px", padding: "0.4rem 0.85rem", color: "#fff",
+                fontFamily: "var(--font-body)", fontSize: "0.8rem", fontWeight: 600 }}>
+              + Add
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function BoolEditor({ section, draft, onSet }) {
   return (

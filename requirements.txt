@@ -11,3 +11,4 @@ passlib
 python-multipart
 pydantic[email]
 bcrypt
+requests==2.34.2

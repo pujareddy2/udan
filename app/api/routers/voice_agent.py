@@ -14,7 +14,7 @@ router = APIRouter()
 class VoiceChatRequest(BaseModel):
     user_id: str
     module: str = "farmer"
-    language: str
+    language: str = "en"
     message: str
 
 @router.post("/voice/chat", tags=["Voice Agent"])

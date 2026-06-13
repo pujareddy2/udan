@@ -57,3 +57,14 @@ class SeniorCitizenProfileUpdate(BaseModel):
     health_conditions: Optional[List[str]] = None
     annual_income: Optional[float] = None
     is_disabled: Optional[bool] = None
+class JobSeekerProfileSaveRequest(BaseModel):
+    education_level: str | None = None
+    skills: list[str] = []
+    employment_status: str | None = None
+    years_of_experience: int | None = None
+    preferred_job_role: str | None = None
+    is_disabled: bool = False
+
+class ProfileUpdateResponse(BaseModel):
+    success: bool
+    message: str

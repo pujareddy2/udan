@@ -21,7 +21,7 @@ def get_farmer_dashboard(user_id: int, session: Session = Depends(get_session)):
         
     documents_missing = 0
     if user_profile and user_profile.profile_data:
-        docs = user_profile.profile_data.get("documents", [])
+        docs = user_profile.profile_data.get("documents") or []
         # If they don't have Aadhaar and Land Passbook, missing
         if "Aadhaar" not in docs: documents_missing += 1
         if "Land Passbook" not in docs: documents_missing += 1
@@ -78,8 +78,106 @@ def get_student_dashboard(user_id: str):
     return _get_mock_dashboard("student", user_id)
 
 @router.get("/dashboard/jobseeker/{user_id}", tags=["Dashboard"])
-def get_jobseeker_dashboard(user_id: str):
-    return _get_mock_dashboard("jobseeker", user_id)
+def get_jobseeker_dashboard(user_id: int, session: Session = Depends(get_session)):
+    from app.models.domain import JobSeekerProfile as JobSeekerProfileModel
+    user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
+    jobseeker_profile = session.exec(select(JobSeekerProfileModel).where(JobSeekerProfileModel.user_id == user_id)).first()
+
+    # --- Name ---
+    user_name = "User"
+    if user_profile and user_profile.full_name:
+        user_name = user_profile.full_name
+
+    # --- Category ---
+    category = "General"
+    if user_profile and user_profile.category:
+        category = user_profile.category
+    if user_profile and user_profile.profile_data:
+        category = user_profile.profile_data.get("category", category)
+
+    # --- Qualification & role ---
+    qualification = "Graduate"
+    preferred_job_role = "Professional"
+    experience_years = "Fresher"
+    skills = []
+    employment_status = "Unemployed"
+    has_caste_cert = False
+    documents = []
+
+    if jobseeker_profile:
+        qualification = jobseeker_profile.education_level or qualification
+        preferred_job_role = jobseeker_profile.preferred_job_role or preferred_job_role
+        experience_years = f"{int(jobseeker_profile.years_of_experience)} Year(s)" if jobseeker_profile.years_of_experience else "Fresher"
+        skills = jobseeker_profile.skills or []
+        employment_status = jobseeker_profile.employment_status or employment_status
+
+    if user_profile and user_profile.profile_data:
+        pd = user_profile.profile_data
+        qualification = pd.get("qualification", qualification)
+        preferred_job_role = pd.get("preferred_job_role", preferred_job_role)
+        if pd.get("experience_years"):
+            try:
+                yrs = float(pd["experience_years"])
+                experience_years = f"{int(yrs)} Year(s)" if yrs >= 1 else "Fresher"
+            except Exception:
+                pass
+        if pd.get("skills"):
+            skills = pd["skills"]
+        if pd.get("employment_status"):
+            employment_status = pd["employment_status"]
+        documents = pd.get("documents") or []
+        if "Caste Certificate" in documents:
+            has_caste_cert = True
+
+    # --- Location ---
+    state = user_profile.state if user_profile else ""
+    district = user_profile.district if user_profile else ""
+
+    # --- Readiness / Documents ---
+    docs_needed = ["Aadhaar", "Graduation Certificate", "Caste Certificate"]
+    documents_missing = sum(1 for d in docs_needed if d not in documents)
+
+    profile_completion = 60
+    if user_profile:
+        profile_completion += 15
+    if jobseeker_profile or (user_profile and user_profile.profile_data):
+        profile_completion += 15
+    if skills:
+        profile_completion += 10
+    profile_completion = min(profile_completion, 100)
+
+    doc_score = max(0, 100 - documents_missing * 15)
+    skill_score = min(100, 60 + len(skills) * 5)
+    overall_readiness = round((profile_completion + doc_score + skill_score) / 3)
+
+    eligible_value = 44900 + (8000 if has_caste_cert else 0)
+
+    return {
+        "success": True,
+        "message": "Jobseeker dashboard retrieved successfully",
+        "user_name": user_name,
+        "category": category,
+        "qualification": qualification,
+        "preferred_job_role": preferred_job_role,
+        "experience_years": experience_years,
+        "skills": skills,
+        "employment_status": employment_status,
+        "state": state,
+        "district": district,
+        "has_caste_cert": has_caste_cert,
+        "completion_percentage": profile_completion,
+        "readiness_score": overall_readiness,
+        "profile_data_score": profile_completion,
+        "document_score": doc_score,
+        "skills_score": skill_score,
+        "eligible_opportunities": 4,
+        "potential_opportunities": 5,
+        "documents_missing": documents_missing,
+        "eligible_value": eligible_value,
+        "potential_value": 120000,
+        "approval_probability": 89,
+        "top_opportunity": "SSC CGL 2026"
+    }
 
 @router.get("/dashboard/entrepreneur/{user_id}", tags=["Dashboard"])
 def get_entrepreneur_dashboard(user_id: str):

@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from app.core.db import get_session
+from app.api.schemas.profile import JobSeekerProfileSaveRequest, ProfileUpdateResponse
 from typing import List, Optional, Dict, Any
-
+from sqlmodel import Session, select
+from app.models.domain import UserProfile, JobSeekerProfile
 router = APIRouter()
 
 class StudentProfile(BaseModel):
@@ -127,7 +130,41 @@ def get_profile_status(user_id: str, role: str):
         "next_page": f"{role}_profile"
     }
 
-@router.put("/profile/{user_id}/{role}", tags=["Profile"])
+# @router.put("/profile/{user_id}/{role}", tags=["Profile"])
+
+@router.put("/profile/{user_id}/jobseeker", response_model=ProfileUpdateResponse, tags=["Profile"])
+def update_jobseeker_profile(user_id: int, req: JobSeekerProfileSaveRequest, session: Session = Depends(get_session)):
+    # Store complete payload
+    payload = req.dict()
+    user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
+    if not user_profile:
+        user_profile = UserProfile(user_id=user_id)
+        session.add(user_profile)
+    user_profile.profile_data = payload
+    session.add(user_profile)
+    # Update or create structured JobSeekerProfile
+    jobseeker = session.exec(select(JobSeekerProfile).where(JobSeekerProfile.user_id == user_id)).first()
+    if not jobseeker:
+        jobseeker = JobSeekerProfile(
+            user_id=user_id,
+            education_level=req.education_level or "",
+            skills=req.skills or [],
+            employment_status=req.employment_status or "",
+            years_of_experience=req.years_of_experience or 0.0,
+            preferred_job_role=req.preferred_job_role or "",
+            is_disabled=req.is_disabled or False,
+        )
+    else:
+        jobseeker.education_level = req.education_level or jobseeker.education_level
+        if req.skills is not None:
+            jobseeker.skills = req.skills
+        jobseeker.employment_status = req.employment_status or jobseeker.employment_status
+        jobseeker.years_of_experience = req.years_of_experience or jobseeker.years_of_experience
+        jobseeker.preferred_job_role = req.preferred_job_role or jobseeker.preferred_job_role
+        jobseeker.is_disabled = req.is_disabled if req.is_disabled is not None else jobseeker.is_disabled
+    session.add(jobseeker)
+    session.commit()
+    return ProfileUpdateResponse(success=True, message="Job Seeker profile updated")
 def update_role_profile(user_id: str, role: str, profile_data: Dict[str, Any]):
     """Update role-specific profile (triggers AI engines)."""
     if role == "student":

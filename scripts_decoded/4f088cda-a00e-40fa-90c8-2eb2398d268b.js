@@ -24,7 +24,7 @@ window.UDAAN_PROFILE_SCHEMA = (function () {
     ]},
     { id: "documents_available", title: "Documents Available", icon: "book", type: "multi",
       hint: "Select the documents you currently have.",
-      options: ["Aadhaar", "PAN", "Income Certificate", "Caste Certificate", "Ration Card", "Bank Account", "Land Passbook"] },
+      options: ["Aadhaar", "PAN", "Income Certificate", "Caste Certificate", "Ration Card", "Bank Account", "Land Passbook", "Graduation Certificate", "Intermediate Certificate"] },
     { id: "digital", title: "Digital Readiness", icon: "spark", type: "bool",
       hint: "What do you have access to?",
       fields: [
@@ -74,9 +74,32 @@ window.UDAAN_PROFILE_SCHEMA = (function () {
       ]}
     ],
     jobseekers: [
-      { id: "js_education", title: "Education", icon: "book", fields: [
-        { key: "qualification", label: "Qualification", type: "text" },
-        { key: "experience_years", label: "Experience (years)", type: "text" }
+      { id: "js_education", title: "Education & Experience", icon: "book", fields: [
+        { key: "qualification", label: "Highest Qualification", type: "text" },
+        { key: "experience_years", label: "Experience (years)", type: "text" },
+        { key: "preferred_job_role", label: "Preferred Job Role", type: "text" },
+        { key: "employment_status", label: "Employment Status", type: "select",
+          options: ["Student", "Unemployed", "Employed", "Career Switcher"] }
+      ]},
+      { id: "js_skills", title: "Skills", icon: "spark", type: "multi", customInput: true,
+        hint: "Select your current skills. These help match you with skilling schemes and job opportunities.",
+        options: [
+          "Python", "SQL", "JavaScript", "Java", "HTML/CSS", "C/C++",
+          "Data Analysis", "MS Office", "Tally / Accounting",
+          "Communication (English)", "Communication (Hindi)",
+          "Leadership", "Customer Service",
+          "Electrical Wiring", "Plumbing", "Welding / Fabrication",
+          "Tailoring / Textile", "Beauty & Wellness",
+          "Mobile Repair", "Computer Hardware"
+        ]
+      },
+      { id: "js_career_target", title: "Career Target", icon: "briefcase", fields: [
+        { key: "target_sector", label: "Target Sector", type: "select",
+          options: ["Government / Public Sector", "IT / Software", "Banking / Finance",
+                    "Healthcare", "Manufacturing", "Teaching / Education",
+                    "Defence / Police", "Retail / Sales", "Other"] },
+        { key: "preferred_job_type", label: "Preferred Job Type", type: "select",
+          options: ["Full-time", "Part-time", "Apprenticeship", "Internship", "Freelance"] }
       ]}
     ],
   };
