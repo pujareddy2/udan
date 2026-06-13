@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, EmailStr
 from sqlmodel import Session, select
 from typing import Dict, Any
+import bcrypt
 
 from app.core.db import get_session
 from app.models.domain import User, UserProfile, UserRole, FarmerProfile
@@ -12,7 +13,14 @@ def get_password_hash(password: str) -> str:
     return password + "_hashed"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return plain_password + "_hashed" == hashed_password
+    if plain_password + "_hashed" == hashed_password:
+        return True
+    if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$") or hashed_password.startswith("$2y$"):
+        try:
+            return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+        except Exception:
+            pass
+    return False
 
 class RegisterRequest(BaseModel):
     email: EmailStr
@@ -141,28 +149,62 @@ def login(req: LoginRequest, session: Session = Depends(get_session)):
 
 @router.put("/profile/{user_id}/farmer", tags=["Profile"])
 def update_farmer_profile(user_id: int, payload: dict, session: Session = Depends(get_session)):
+    # 1. Ensure User exists
+    user = session.get(User, user_id)
+    if not user:
+        user = User(
+            id=user_id,
+            email=f"farmer_{user_id}@example.com",
+            password_hash="hashed_default",
+            module_type="farmer"
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+
+    # 2. Ensure UserProfile exists
     user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
     if not user_profile:
-        raise HTTPException(status_code=404, detail="UserProfile not found")
+        user_profile = UserProfile(
+            user_id=user_id,
+            full_name=payload.get("full_name", "Farmer"),
+            mobile_number=payload.get("mobile_number", ""),
+            age=35,
+            gender="Male",
+            state=payload.get("state", "Telangana"),
+            district=payload.get("district", ""),
+            category=payload.get("category", "General"),
+            preferred_language="en",
+            profile_data=payload
+        )
+    else:
+        user_profile.profile_data = payload
+        if "state" in payload: user_profile.state = payload["state"]
+        if "district" in payload: user_profile.district = payload["district"]
+        if "category" in payload: user_profile.category = payload["category"]
     
-    # Store dynamic fields into JSON column
-    user_profile.profile_data = payload
     session.add(user_profile)
     
-    # Also update or create FarmerProfile for specific structured data
+    # 3. Ensure FarmerProfile exists and has correct values
     farmer_profile = session.exec(select(FarmerProfile).where(FarmerProfile.user_id == user_id)).first()
+    
+    land_area = float(payload.get("land_area", 0.0) or 0.0)
+    owns_land = payload.get("owns_land", False)
+    
     if not farmer_profile:
         farmer_profile = FarmerProfile(
             user_id=user_id,
-            land_size_acres=float(payload.get("land_area", 0.0) or 0.0),
-            land_type="Irrigated" if payload.get("owns_land") else "None",
+            land_size_acres=land_area if owns_land else 0.0,
+            land_type="Irrigated" if owns_land else "None",
             primary_crop=payload.get("crop_type", "Unknown"),
             pm_kisan_id="Yes" if payload.get("pm_kisan_enrolled") else None,
             annual_income=float(payload.get("annual_income", 0.0) or 0.0)
         )
     else:
-        farmer_profile.land_size_acres = float(payload.get("land_area", farmer_profile.land_size_acres) or 0.0)
+        farmer_profile.land_size_acres = land_area if owns_land else 0.0
+        farmer_profile.land_type = "Irrigated" if owns_land else "None"
         farmer_profile.primary_crop = payload.get("crop_type", farmer_profile.primary_crop)
+        farmer_profile.pm_kisan_id = "Yes" if payload.get("pm_kisan_enrolled") else None
         farmer_profile.annual_income = float(payload.get("annual_income", farmer_profile.annual_income) or 0.0)
     
     session.add(farmer_profile)

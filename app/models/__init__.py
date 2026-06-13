@@ -121,6 +121,11 @@ from app.models.intelligence_db import (
     OpportunityHealthScore,
 )
 
+from app.models.telegram_db import (
+    TelegramConnection,
+    TelegramBotLog,
+)
+
 __all__ = [
     "User",
     "UserProfile",
@@ -199,4 +204,6 @@ __all__ = [
     "OpportunityTrustScore",
     "ApprovalPrediction",
     "OpportunityHealthScore",
+    "TelegramConnection",
+    "TelegramBotLog",
 ]

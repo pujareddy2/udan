@@ -230,8 +230,55 @@ function Profile({ persona, onClose, initialEdit }) {
   const [built, setBuilt] = useState(() => window.UDAAN_PROFILE_BUILT());
   const [edit, setEdit] = useState(!!initialEdit);
   const [draft, setDraft] = useState(() => window.UDAAN_LOAD_PROFILE(persona));
+  const [statusInfo, setStatusInfo] = useState(null);
 
-  const data = useMemo(() => window.UDAAN_BUILD_FROM_VALUES(persona, values), [persona, values]);
+  React.useEffect(() => {
+    var userId = localStorage.getItem("user_id") || "123";
+    var role = localStorage.getItem("role") || (persona === "students" ? "student" : (persona === "farmers" ? "farmer" : "jobseeker"));
+    
+    fetch("http://localhost:8000/api/v1/profile/" + userId)
+      .then(function(res) {
+        if (res.ok) return res.json();
+      })
+      .then(function(data) {
+        if (data && data.profile) {
+          setValues(data.profile);
+          setDraft(data.profile);
+        }
+      })
+      .catch(function(err) {
+        console.error("Error loading profile:", err);
+      });
+
+    fetch("http://localhost:8000/api/v1/profile/" + userId + "/" + role + "/status")
+      .then(function(res) {
+        if (res.ok) return res.json();
+      })
+      .then(function(sData) {
+        if (sData) {
+          setStatusInfo(sData);
+        }
+      })
+      .catch(function(err) {
+        console.error("Error loading profile status:", err);
+      });
+  }, [persona]);
+
+  const data = useMemo(() => {
+    const computed = window.UDAAN_BUILD_FROM_VALUES(persona, values);
+    if (statusInfo && (persona === "students" || persona === "student")) {
+      computed.completion = statusInfo.completion_percentage ?? computed.completion;
+      computed.metrics = [
+        { label: "Documents Ready", value: statusInfo.documents_ready + "/" + statusInfo.documents_required },
+        { label: "Interests Chosen", value: String(statusInfo.interests_count) },
+        { label: "Fields Completed", value: statusInfo.fields_completed + "/" + statusInfo.total_fields },
+        { label: "Profile Strength", value: statusInfo.profile_strength || "Strong" }
+      ];
+      computed.fieldsFilled = statusInfo.fields_completed;
+      computed.fieldsTotal = statusInfo.total_fields;
+    }
+    return computed;
+  }, [persona, values, statusInfo]);
 
   const handlers = {
     setField: (key, val) => setDraft((d) => Object.assign({}, d, { [key]: val })),

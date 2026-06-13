@@ -9,7 +9,8 @@ manifest = json.load(open('manifest_dump.json'))
 files_to_update = [
     '4f088cda-a00e-40fa-90c8-2eb2398d268b',
     'c33aa38d-654c-4053-bad9-41e46538669f',
-    'b7e1da8a-a516-4d12-aab4-e9383c107ecf'
+    'b7e1da8a-a516-4d12-aab4-e9383c107ecf',
+    '615a609b-2f33-4430-bf48-494bb7f47957'
 ]
 
 for k in files_to_update:

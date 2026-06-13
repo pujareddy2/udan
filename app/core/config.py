@@ -24,10 +24,17 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
     
+    # TELEGRAM BOT
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_BOT_USERNAME: str = "udaan_ai_bot"
+    TELEGRAM_PARSE_MODE: str = "HTML"
+    TELEGRAM_ENABLED: bool = False
+    
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

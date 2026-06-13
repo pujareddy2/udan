@@ -501,7 +501,6 @@ nav > div.liquid-glass:nth-child(2) {
   display: none !important;
 }
 
-.auth-foot {
 .control::placeholder { color: rgba(255,255,255,0.55); }
 .control:focus { border-color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.18); }
 select.control { appearance: none; cursor: pointer;
@@ -788,6 +787,12 @@ select.control option { color: #111; }
         if (h.indexOf("dashboard") === 0) { setView("dashboard", h.split("/")[1]); }
         else if (h === "login") { setView("login"); }
         else if (h === "register") { setView("register"); }
+        else if (h === "profile-completion") {
+          var role = localStorage.getItem("role") || window.__startPersona || "students";
+          var roleMap = { "farmer": "farmers", "student": "students", "jobseeker": "jobseekers" };
+          var mappedRole = roleMap[role] || role || "students";
+          setView("dashboard", mappedRole);
+        }
         else { setView("landing"); }
       }
       window.addEventListener("hashchange", route);

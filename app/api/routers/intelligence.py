@@ -66,23 +66,6 @@ def get_approval_intelligence():
         "level": "High"
     }
 
-@router.get("/approval/farmer/{user_id}", tags=["Intelligence"])
-def get_approval_farmer(user_id: int, session: Session = Depends(get_session)):
-    opps = [
-        {
-            "scheme": "PM Kisan",
-            "approval_probability": 92
-        }
-    ]
-    farmer_profile = session.exec(select(FarmerProfile).where(FarmerProfile.user_id == user_id)).first()
-    if farmer_profile and farmer_profile.land_size_acres > 0:
-        opps.append({
-            "scheme": "Rythu Bandhu",
-            "approval_probability": 98
-        })
-    return {
-        "opportunities": opps
-    }
 
 @router.get("/opportunity-health/{opportunity_id}", tags=["Intelligence"])
 def get_opportunity_health(opportunity_id: str):

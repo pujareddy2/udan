@@ -55,17 +55,92 @@
               method: "PUT",
               headers: {"Content-Type": "application/json"},
               body: JSON.stringify(payload)
+          }).then(function(res) {
+              if (!res.ok) throw new Error("PUT profile failed");
+              return res.json();
           }).then(function() {
-              return fetch("http://localhost:8000/api/v1/profile-context/generate", { method: "POST" });
+              return fetch("http://localhost:8000/api/v1/profile-context/generate", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST profile-context failed");
+              return res.json();
           }).then(function() {
-              return fetch("http://localhost:8000/api/v1/ai-discovery/run", { method: "POST" });
+              return fetch("http://localhost:8000/api/v1/ai-discovery/run", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST ai-discovery failed");
+              return res.json();
           }).then(function() {
-              return fetch("http://localhost:8000/api/v1/eligibility/run", { method: "POST" });
+              return fetch("http://localhost:8000/api/v1/eligibility/run", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST eligibility failed");
+              return res.json();
           }).then(function() {
               location.hash = "#dashboard/farmers";
           }).catch(function(e) {
               console.error(e);
               location.hash = "#dashboard/farmers";
+          });
+      } else if (role === "student" || role === "students") {
+          fetch("http://localhost:8000/api/v1/profile/" + userId + "/student", {
+              method: "PUT",
+              headers: {"Content-Type": "application/json"},
+              body: JSON.stringify(values)
+          }).then(function(res) {
+              if (!res.ok) throw new Error("PUT profile failed");
+              return res.json();
+          }).then(function() {
+              return fetch("http://localhost:8000/api/v1/profile-context/generate", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST profile-context failed");
+              return res.json();
+          }).then(function() {
+              return fetch("http://localhost:8000/api/v1/ai-discovery/run", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST ai-discovery failed");
+              return res.json();
+          }).then(function() {
+              return fetch("http://localhost:8000/api/v1/eligibility/run", {
+                  method: "POST",
+                  headers: {"Content-Type": "application/json"},
+                  body: JSON.stringify({ user_id: userId })
+              });
+          }).then(function(res) {
+              if (!res.ok) throw new Error("POST eligibility failed");
+              return res.json();
+          }).then(function() {
+              return fetch("http://localhost:8000/api/v1/readiness?user_id=" + userId);
+          }).then(function(res) {
+              if (!res.ok) throw new Error("GET readiness failed");
+              return res.json();
+          }).then(function() {
+              return fetch("http://localhost:8000/api/v1/value?user_id=" + userId);
+          }).then(function(res) {
+              if (!res.ok) throw new Error("GET value failed");
+              return res.json();
+          }).then(function() {
+              location.hash = "#dashboard/students";
+          }).catch(function(e) {
+              console.error(e);
+              location.hash = "#dashboard/students";
           });
       }
     } catch (e) {}

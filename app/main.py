@@ -35,7 +35,7 @@ def create_app() -> FastAPI:
     from app.api.routers import (
         eligibility, readiness, value, documents, notifications,
         dashboard, ai_discovery, coach, intelligence, profile_context, search,
-        voice_agent, timeline
+        voice_agent, timeline, approval
     )
     app.include_router(eligibility.router, prefix="/api/v1")
     app.include_router(readiness.router, prefix="/api/v1")
@@ -50,14 +50,25 @@ def create_app() -> FastAPI:
     app.include_router(search.router, prefix="/api/v1")
     app.include_router(voice_agent.router, prefix="/api/v1")
     app.include_router(timeline.router, prefix="/api/v1")
+    app.include_router(approval.router, prefix="/api/v1")
     
     # Include Test Integrations router
-    from app.api.routers import test_integration
+    from app.api.routers import test_integration, telegram
     app.include_router(test_integration.router, prefix="/api/v1")
+    app.include_router(telegram.router, prefix="/api/v1")
 
     # Serve the Live Voice UI Dashboard
     from fastapi.responses import HTMLResponse, JSONResponse
     import os
+    
+    @app.get("/", response_class=HTMLResponse, tags=["UI"])
+    def get_main_ui():
+        file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "UDAAN AI (standalone).html")
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                return f.read()
+        return "<h1>UDAAN AI app not found.</h1>"
+
     @app.get("/voice", response_class=HTMLResponse, tags=["UI"])
     def get_voice_ui():
         file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "voice_demo.html")
