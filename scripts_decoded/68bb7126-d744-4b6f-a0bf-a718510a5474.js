@@ -75,7 +75,7 @@ window.UDAAN_PERSONAS = [
     chip: "UDAAN AI",
     tagline: "Government jobs & skilling, matched to you",
     heading: "UDAAN AI for Job Seekers",
-    sub: "Government jobs, apprenticeships and certified skilling — recommended for your qualifications, with application reminders so you never miss a deadline.",
+    sub: "Personalized opportunity feed: central gov (SSC CGL 2026), railway (RRB NTPC 2025), technical apprenticeships (NATS), and skill development (PMKVY) matched to your qualifications with automated eligibility check and AI free scheme fix upgrades.",
     cta: "See Matched Jobs",
     secondaryCta: "Chat with UDAAN AI",
     stats: [

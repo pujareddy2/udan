@@ -248,3 +248,33 @@ def get_student_approval(user_id: int, session: Session = Depends(get_session)):
         ],
         "schemes": schemes
     }
+
+from app.models.domain import Document, Opportunity
+
+@router.get("/approval", tags=["Approval Engine"])
+def get_jobseeker_approval(user_id: int = 5, session: Session = Depends(get_session)):
+    user_docs = session.exec(select(Document).where(Document.user_id == user_id)).all()
+    verified_docs = {d.document_master.document_name for d in user_docs if d.status == "Verified" and d.document_master}
+    
+    # We want to check missing docs across jobseeker opportunities
+    opps = session.exec(select(Opportunity).where(Opportunity.module == "jobseeker")).all()
+    
+    missing_all = set()
+    for opp in opps:
+        for rd in opp.required_documents or []:
+            if rd not in verified_docs:
+                missing_all.add(rd)
+                
+    missing_list = list(missing_all)
+    if missing_list:
+        prob = max(40, 91 - len(missing_list) * 15)
+        reason = f"Missing required documents: {', '.join(missing_list)}"
+    else:
+        prob = 91
+        reason = "All required documents present"
+        
+    return {
+        "approval_probability": prob,
+        "reason": reason,
+        "missing": missing_list
+    }

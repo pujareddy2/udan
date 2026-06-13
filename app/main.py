@@ -53,9 +53,10 @@ def create_app() -> FastAPI:
     app.include_router(approval.router, prefix="/api/v1")
     
     # Include Test Integrations router
-    from app.api.routers import test_integration, telegram
+    from app.api.routers import test_integration, telegram, jobseeker
     app.include_router(test_integration.router, prefix="/api/v1")
     app.include_router(telegram.router, prefix="/api/v1")
+    app.include_router(jobseeker.router, prefix="/api/v1")
 
     # Serve the Live Voice UI Dashboard
     from fastapi.responses import HTMLResponse, JSONResponse

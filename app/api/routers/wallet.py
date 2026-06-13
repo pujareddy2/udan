@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.domain import UserProfile, FarmerProfile, User
+from app.models.domain import UserProfile, FarmerProfile, User, Document, DocumentMaster
 
 router = APIRouter()
 
@@ -130,4 +130,32 @@ def get_wallet_opportunities(user_id: int = None, session: Session = Depends(get
                 
     return {
         "opportunities": opportunities
+    }
+
+@router.get("/wallet/documents", tags=["Wallet"])
+def get_wallet_documents(user_id: int = 5, session: Session = Depends(get_session)):
+    user_docs = session.exec(select(Document).where(Document.user_id == user_id)).all()
+    all_masters = session.exec(select(DocumentMaster)).all()
+    
+    verified = []
+    missing = []
+    expiring = []
+    
+    uploaded_names = {d.document_master.document_name for d in user_docs if d.document_master}
+    
+    for d in user_docs:
+        name = d.document_master.document_name if d.document_master else "Document"
+        if d.status == "Verified":
+            verified.append(name)
+        elif d.status == "Expired":
+            expiring.append(name)
+            
+    for m in all_masters:
+        if m.document_name not in uploaded_names:
+            missing.append(m.document_name)
+            
+    return {
+        "verified": verified,
+        "missing": missing,
+        "expiring": expiring
     }

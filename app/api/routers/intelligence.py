@@ -3,7 +3,40 @@ from sqlmodel import Session, select
 from app.core.db import get_session
 from app.models.domain import FarmerProfile
 
+from pydantic import BaseModel
+
 router = APIRouter()
+
+class ScamScanRequest(BaseModel):
+    text: str
+
+@router.post("/scam/scan", tags=["Intelligence"])
+def scan_job_post(req: ScamScanRequest):
+    text_lower = req.text.lower()
+    
+    # Rules to flag a scam
+    suspect_signatures = []
+    
+    if "deposit" in text_lower or "refundable" in text_lower or "security charge" in text_lower or "laptop dispatch" in text_lower:
+        suspect_signatures.append("Mandatory refundable security deposit or fee requests")
+    if "whatsapp" in text_lower or "telegram" in text_lower:
+        suspect_signatures.append("Redirection to unofficial chat groups (WhatsApp/Telegram)")
+    if "earn" in text_lower and ("daily" in text_lower or "work from home" in text_lower or "working from home" in text_lower):
+        suspect_signatures.append("Suspicious work-from-home high earning claims")
+        
+    if suspect_signatures:
+        return {
+            "status": "flagged",
+            "risk_level": "High",
+            "reason": "Suspect signatures: " + ", ".join(suspect_signatures) + ".",
+            "signatures": suspect_signatures
+        }
+    return {
+        "status": "safe",
+        "risk_level": "Low",
+        "reason": "Shield Idle. No known scam signatures detected in the text.",
+        "signatures": []
+    }
 
 @router.get("/farmer/services", tags=["Intelligence"])
 def get_farmer_services():

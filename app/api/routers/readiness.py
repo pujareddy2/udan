@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.domain import UserProfile, FarmerProfile, User
+from app.models.domain import UserProfile, FarmerProfile, User, Document
 
 router = APIRouter()
 
@@ -14,10 +14,46 @@ def get_readiness(user_id: int = None, session: Session = Depends(get_session)):
     missing_docs = ["Income Certificate"]
     
     is_student = False
+    is_jobseeker = False
     if user_id:
         user = session.get(User, user_id)
-        if user and (user.module_type == "student" or user.module_type == "students"):
-            is_student = True
+        if user:
+            if user.module_type in ["student", "students"]:
+                is_student = True
+            elif user.module_type in ["jobseeker", "jobseekers"]:
+                is_jobseeker = True
+
+    if is_jobseeker:
+        user_docs = session.exec(select(Document).where(Document.user_id == user_id)).all()
+        # Check verified documents
+        verified_docs = {d.document_master.document_name for d in user_docs if d.status == "Verified" and d.document_master}
+        
+        doc_score = 70
+        if "Caste Certificate (OBC)" in verified_docs:
+            doc_score += 20
+        if "Income Certificate" in verified_docs:
+            doc_score += 10
+            
+        # Check skills
+        from app.models.domain import JobSeekerProfile
+        js_profile = session.exec(select(JobSeekerProfile).where(JobSeekerProfile.user_id == user_id)).first()
+        skills_score = 80
+        if js_profile:
+            skills = js_profile.skills or []
+            if "Java Programming" in skills:
+                skills_score = 100
+                
+        profile_score = 85
+        overall_score = (profile_score + doc_score + skills_score) // 3
+        
+        return {
+            "overall": overall_score,
+            "profile": profile_score,
+            "documents": doc_score,
+            "skills": skills_score,
+            "overall_score": overall_score,
+            "overall_readiness": overall_score
+        }
 
     if is_student:
         profile_readiness = 90

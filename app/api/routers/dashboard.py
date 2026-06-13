@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.domain import UserProfile, FarmerProfile
+from app.models.domain import UserProfile, FarmerProfile, Opportunity, Document
 
 router = APIRouter()
 
@@ -114,8 +114,40 @@ def get_student_dashboard(user_id: int, session: Session = Depends(get_session))
     }
 
 @router.get("/dashboard/jobseeker/{user_id}", tags=["Dashboard"])
-def get_jobseeker_dashboard(user_id: str):
-    return _get_mock_dashboard("jobseeker", user_id)
+def get_jobseeker_dashboard(user_id: int, session: Session = Depends(get_session)):
+    user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
+    opps = session.exec(select(Opportunity).where(Opportunity.module == "jobseeker")).all()
+    user_docs = session.exec(select(Document).where(Document.user_id == user_id)).all()
+    verified_docs = {d.document_master.document_name for d in user_docs if d.status == "Verified" and d.document_master}
+    
+    matched = len(opps)
+    eligible = 0
+    blocked = 0
+    for opp in opps:
+        is_blocked = False
+        for rd in opp.required_documents or []:
+            if rd not in verified_docs:
+                is_blocked = True
+                break
+        if is_blocked:
+            blocked += 1
+        else:
+            eligible += 1
+            
+    completion = 70
+    if user_profile:
+        completion += 16
+    
+    doc_readiness = min(100, len(verified_docs) * 35) if verified_docs else 40
+    readiness = (completion + doc_readiness) // 2
+    approval = 91 if not blocked else max(50, 91 - (blocked * 10))
+    
+    return {
+        "matched_opportunities": matched,
+        "eligible_opportunities": eligible,
+        "readiness_score": readiness,
+        "approval_probability": approval
+    }
 
 @router.get("/dashboard/entrepreneur/{user_id}", tags=["Dashboard"])
 def get_entrepreneur_dashboard(user_id: str):

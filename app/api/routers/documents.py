@@ -1,10 +1,12 @@
 import os
 import json
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, Form
+from pydantic import BaseModel
+from datetime import datetime
 from sqlmodel import Session, select
 from app.core.db import get_session
-from app.models.domain import UserProfile
+from app.models.domain import UserProfile, Document, DocumentMaster
 from app.core.config import settings
 
 router = APIRouter()
@@ -147,4 +149,36 @@ async def get_document_recovery_guide(document_name: str):
         # New: multiple Google Images results for carousel
         "sample_images": sample_images,
         "image_search_query": image_search_query
+    }
+
+class DocumentUploadBody(BaseModel):
+    user_id: int
+    document_name: str
+
+@router.post("/documents/upload", tags=["Documents"])
+def upload_document_json(body: DocumentUploadBody, session: Session = Depends(get_session)):
+    dm = session.exec(select(DocumentMaster).where(DocumentMaster.document_name == body.document_name)).first()
+    if not dm:
+        dm = DocumentMaster(document_name=body.document_name, description=f"{body.document_name} description", issuing_authority="Government Office")
+        session.add(dm)
+        session.commit()
+        session.refresh(dm)
+        
+    doc = session.exec(select(Document).where(Document.user_id == body.user_id, Document.doc_master_id == dm.id)).first()
+    if doc:
+        doc.status = "Verified"
+        doc.uploaded_at = datetime.utcnow()
+    else:
+        doc = Document(
+            user_id=body.user_id,
+            doc_master_id=dm.id,
+            status="Verified",
+            file_url=f"https://s3.amazonaws.com/udaan/{body.document_name.lower().replace(' ', '_')}.pdf"
+        )
+        session.add(doc)
+        
+    session.commit()
+    return {
+        "success": True,
+        "message": f"Document '{body.document_name}' uploaded and verified successfully!"
     }

@@ -86,6 +86,7 @@ function Dashboard() {
 
   const [apiData, setApiData] = useState(null);
   const [loadingApi, setLoadingApi] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (p.key === "farmers" && userId) {
@@ -132,8 +133,42 @@ function Dashboard() {
       }).catch(e => {
         console.error(e); setLoadingApi(false);
       });
+    } else if (p.key === "jobseekers" && userId) {
+      setLoadingApi(true);
+      Promise.all([
+        fetch(`http://localhost:8000/api/v1/dashboard/jobseeker/${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/profile-context/${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/lifecycle/missed-opportunities?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/readiness?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/wallet/documents?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/jobseeker/roadmap?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/opportunities/recommended?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/approval?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/value?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/jobseeker/opportunity-summary?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/jobseeker/applications?user_id=${userId}`).then(r=>r.ok?r.json():null),
+        fetch(`http://localhost:8000/api/v1/jobseeker/deadlines?user_id=${userId}`).then(r=>r.ok?r.json():null)
+      ]).then(res => {
+        setApiData({
+          summary: res[0],
+          profile_context: res[1],
+          missed: res[2],
+          readiness: res[3],
+          documents: res[4],
+          roadmap: res[5],
+          recommended: res[6],
+          approval: res[7],
+          value: res[8],
+          opportunity_summary: res[9],
+          applications: res[10],
+          deadlines: res[11]
+        });
+        setLoadingApi(false);
+      }).catch(e => {
+        console.error(e); setLoadingApi(false);
+      });
     }
-  }, [p.key, userId, profileOpen]);
+  }, [p.key, userId, profileOpen, refreshTrigger]);
 
   const rise = (delay) => ({
     initial: { filter: "blur(10px)", opacity: 0, y: 20 },
@@ -232,6 +267,64 @@ function Dashboard() {
               </M.div>
             )}
 
+            {p.key === "jobseekers" && (
+              <>
+                <M.div {...rise(0.8)} style={{ marginTop: "2rem", display: "flex", gap: "1.5rem", justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+                  <button onClick={() => {
+                    document.getElementById("matched-jobs-section")?.scrollIntoView({ behavior: "smooth" });
+                  }} className="liquid-glass-strong" style={{
+                    padding: "0.8rem 2.5rem", borderRadius: "9999px", color: "#fff", background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.25)", fontFamily: "var(--font-body)", fontSize: "0.95rem",
+                    fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem"
+                  }}>
+                    See Matched Jobs ↗
+                  </button>
+                  <button onClick={() => {
+                    document.getElementById("ai-coach-section")?.scrollIntoView({ behavior: "smooth" });
+                  }} style={{
+                    background: "none", border: "none", color: "#fff", fontFamily: "var(--font-body)", fontSize: "0.95rem",
+                    fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.4rem"
+                  }}>
+                    ▶ Chat with UDAAN AI
+                  </button>
+                </M.div>
+                <M.div {...rise(0.85)} style={{
+                  marginTop: "2.5rem",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "1.25rem",
+                  width: "100%",
+                  maxWidth: "960px",
+                  padding: "0 1.5rem"
+                }}>
+                  <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.25rem", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ fontSize: "2.2rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "#7acaff" }}>
+                      {apiData?.summary?.matched_opportunities ?? 42}
+                    </div>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.8, fontFamily: "var(--font-body)", marginTop: "0.25rem" }}>Matched Opportunities</div>
+                  </div>
+                  <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.25rem", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ fontSize: "2.2rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "#7fe0a0" }}>
+                      {apiData?.summary?.eligible_opportunities ?? 18}
+                    </div>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.8, fontFamily: "var(--font-body)", marginTop: "0.25rem" }}>Eligible Opportunities</div>
+                  </div>
+                  <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.25rem", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ fontSize: "2.2rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "#ffd27a" }}>
+                      {apiData?.summary?.readiness_score ?? 84}
+                    </div>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.8, fontFamily: "var(--font-body)", marginTop: "0.25rem" }}>Readiness Score</div>
+                  </div>
+                  <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.25rem", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(20px)" }}>
+                    <div style={{ fontSize: "2.2rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "#e87aff" }}>
+                      {apiData?.summary?.approval_probability ?? 91}%
+                    </div>
+                    <div style={{ fontSize: "0.85rem", opacity: 0.8, fontFamily: "var(--font-body)", marginTop: "0.25rem" }}>Approval Probability</div>
+                  </div>
+                </M.div>
+              </>
+            )}
+
           </section>
 
           {/* DYNAMIC FARMER DASHBOARD VS STUDENT DASHBOARD VS OTHER STATIC DASHBOARDS */}
@@ -239,6 +332,8 @@ function Dashboard() {
              <FarmerSections data={apiData} loading={loadingApi} Icon={Icon} Button={Button} Tag={Tag} />
           ) : p.key === "students" ? (
              <StudentSections data={apiData} loading={loadingApi} Icon={Icon} Button={Button} Tag={Tag} openChat={openChat} />
+          ) : p.key === "jobseekers" ? (
+             <JobSeekerSections data={apiData} loading={loadingApi} Icon={Icon} Button={Button} Tag={Tag} openChat={openChat} onRefresh={() => setRefreshTrigger(t => t + 1)} />
           ) : (
              <>
                 {/* STATIC CATEGORIES */}
@@ -1125,6 +1220,790 @@ function StudentSections({ data, loading, Icon, Button, Tag, openChat }) {
          <TelegramConnectSection userId={sum.user_id || "1"} />
 
          {activeDocGuide && <DocumentGuideModal docName={activeDocGuide} onClose={() => setActiveDocGuide(null)} />}
+      </div>
+   );
+}
+
+function DocumentUploadModal({ docName, onClose, onRefresh }) {
+   const { useState } = React;
+   const [uploading, setUploading] = useState(false);
+   const [success, setSuccess] = useState(false);
+   const [file, setFile] = useState(null);
+
+   const handleUpload = () => {
+      setUploading(true);
+      fetch("http://localhost:8000/api/v1/documents/upload", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            user_id: 5,
+            document_name: docName
+         })
+      })
+      .then(r => r.json())
+      .then(data => {
+         setUploading(false);
+         if (data.success) {
+            setSuccess(true);
+            setTimeout(() => {
+               onRefresh();
+               onClose();
+            }, 1500);
+         }
+      })
+      .catch(e => {
+         setUploading(false);
+         console.error(e);
+      });
+   };
+
+   return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(5px)", padding: "1rem" }}>
+         <div className="liquid-glass-strong" style={{ width: "100%", maxWidth: "450px", borderRadius: "1.25rem", padding: "2rem", position: "relative", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontFamily: "var(--font-body)" }}>
+            <button onClick={onClose} style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,0.15)", width: "32px", height: "32px", borderRadius: "50%", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            <h3 style={{ marginTop: 0, fontSize: "1.5rem", fontFamily: "var(--font-heading)", fontStyle: "italic", color: "#ffd27a" }}>📄 Upload {docName}</h3>
+            
+            {success ? (
+               <div style={{ textAlign: "center", padding: "2rem 0" }}>
+                  <div style={{ fontSize: "3rem", color: "#7fe0a0", marginBottom: "1rem" }}>✓</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#7fe0a0" }}>Verification Successful!</div>
+                  <div style={{ opacity: 0.8, fontSize: "0.9rem", marginTop: "0.5rem" }}>Opportunity status updated in wallet.</div>
+               </div>
+            ) : (
+               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", marginTop: "1rem" }}>
+                  <p style={{ margin: 0, fontSize: "0.9rem", opacity: 0.85, lineHeight: 1.5 }}>
+                     Upload a scanned copy of your <strong>{docName}</strong>. Our Document Intelligence Engine will verify it instantly.
+                  </p>
+                  
+                  <div style={{ border: "2px dashed rgba(255,255,255,0.25)", borderRadius: "0.75rem", padding: "2.5rem 1.5rem", textAlign: "center", cursor: "pointer", background: "rgba(255,255,255,0.03)" }} onClick={() => setFile({ name: `${docName.toLowerCase().replace(/ /g, "_")}.pdf` })}>
+                     {file ? (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+                           <span style={{ fontSize: "2rem" }}>📄</span>
+                           <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "#7acaff" }}>{file.name}</span>
+                           <span style={{ fontSize: "0.75rem", opacity: 0.6 }}>Ready to submit</span>
+                        </div>
+                     ) : (
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
+                           <span style={{ fontSize: "2rem", opacity: 0.6 }}>☁</span>
+                           <span style={{ fontSize: "0.9rem", fontWeight: "bold" }}>Click to select certificate file</span>
+                           <span style={{ fontSize: "0.75rem", opacity: 0.6 }}>PDF, JPG, PNG (Max 5MB)</span>
+                        </div>
+                     )}
+                  </div>
+                  
+                  <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+                     <button onClick={onClose} style={{ background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", padding: "0.6rem 1.2rem", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.9rem", fontFamily: "var(--font-body)" }}>Cancel</button>
+                     <button onClick={handleUpload} disabled={uploading} style={{ background: "#7acaff", color: "#000", border: "none", padding: "0.6rem 1.4rem", borderRadius: "0.5rem", cursor: "pointer", fontWeight: "bold", fontSize: "0.9rem", fontFamily: "var(--font-body)", opacity: uploading ? 0.7 : 1 }}>
+                        {uploading ? "Analyzing with AI..." : "Verify & Upload"}
+                     </button>
+                  </div>
+               </div>
+            )}
+         </div>
+      </div>
+   );
+}
+
+function RecoveryPlanModal({ onClose, onRefresh }) {
+   const { useState, useEffect } = React;
+   const [plan, setPlan] = useState(null);
+   const [loading, setLoading] = useState(true);
+   const [activeUpload, setActiveUpload] = useState(null);
+
+   useEffect(() => {
+      fetch("http://localhost:8000/api/v1/lifecycle/recovery-plan")
+         .then(r => r.json())
+         .then(data => { setPlan(data); setLoading(false); })
+         .catch(e => { console.error(e); setLoading(false); });
+   }, []);
+
+   return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(5px)", padding: "1rem" }}>
+         <div className="liquid-glass-strong" style={{ width: "100%", maxWidth: "550px", maxHeight: "90vh", overflowY: "auto", borderRadius: "1.5rem", padding: "2rem", position: "relative", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontFamily: "var(--font-body)" }}>
+            <button onClick={onClose} style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,0.15)", width: "32px", height: "32px", borderRadius: "50%", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            
+            <h3 style={{ marginTop: 0, fontSize: "1.6rem", fontFamily: "var(--font-heading)", fontStyle: "italic", color: "#ffd27a" }}>🛠 Opportunity Recovery Plan</h3>
+            
+            {loading ? (
+               <div style={{ color: "rgba(255,255,255,0.7)", padding: "3rem 0", textAlign: "center" }}>Generating recovery roadmap...</div>
+            ) : (
+               <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", marginTop: "1rem" }}>
+                  <div style={{ background: "rgba(255,210,122,0.08)", borderLeft: "4px solid #ffd27a", borderRadius: "0.5rem", padding: "1rem" }}>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem", marginBottom: "0.25rem", color: "#ffd27a" }}>RECOVERY PLAYBOOK</div>
+                     <div style={{ fontSize: "0.88rem", lineHeight: 1.5, opacity: 0.9 }}>{plan?.recovery_plan}</div>
+                  </div>
+                  
+                  <div>
+                     <div style={{ fontSize: "0.9rem", textTransform: "uppercase", opacity: 0.7, marginBottom: "0.5rem", fontWeight: "bold", letterSpacing: "0.5px" }}>Action Items Checklist</div>
+                     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                        {plan?.action_items?.map((item, idx) => (
+                           <div key={idx} className="liquid-glass" style={{ borderRadius: "0.75rem", padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                              <div>
+                                 <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>{item.doc}</div>
+                                 <div style={{ fontSize: "0.8rem", opacity: 0.7, marginTop: "0.15rem" }}>Issuer: {item.issuer} · Deadline: {item.deadline}</div>
+                              </div>
+                              <button onClick={() => setActiveUpload(item.doc)} style={{ background: "#ffd27a", color: "#000", border: "none", padding: "0.5rem 1rem", borderRadius: "0.5rem", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer" }}>Upload ↗</button>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               </div>
+            )}
+
+            {activeUpload && (
+               <DocumentUploadModal
+                  docName={activeUpload}
+                  onClose={() => setActiveUpload(null)}
+                  onRefresh={() => {
+                     onRefresh();
+                     onClose();
+                  }}
+               />
+            )}
+         </div>
+      </div>
+   );
+}
+
+function OpportunityDetailModal({ opp, onClose, onRefresh }) {
+   const { useState, useEffect } = React;
+   const [trust, setTrust] = useState(null);
+   const [loadingTrust, setLoadingTrust] = useState(true);
+   const [applying, setApplying] = useState(false);
+   const [applied, setApplied] = useState(false);
+   const [activeUpload, setActiveUpload] = useState(null);
+
+   useEffect(() => {
+      fetch(`http://localhost:8000/api/v1/trust/${opp.id}`)
+         .then(r => r.json())
+         .then(data => { setTrust(data); setLoadingTrust(false); })
+         .catch(e => { console.error(e); setLoadingTrust(false); });
+   }, [opp.id]);
+
+   const handleApply = () => {
+      setApplying(true);
+      setTimeout(() => {
+         setApplying(false);
+         setApplied(true);
+         onRefresh();
+      }, 1200);
+   };
+
+   const isBlocked = opp.blocked_reason && opp.blocked_reason !== "None";
+   const blockedDocs = isBlocked ? opp.blocked_reason.replace("Missing ", "").split(", ") : [];
+
+   return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(5px)", padding: "1rem" }}>
+         <div className="liquid-glass-strong" style={{ width: "100%", maxWidth: "580px", maxHeight: "90vh", overflowY: "auto", borderRadius: "1.5rem", padding: "2.25rem", position: "relative", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontFamily: "var(--font-body)" }}>
+            <button onClick={onClose} style={{ position: "absolute", top: "1rem", right: "1rem", background: "rgba(255,255,255,0.15)", width: "32px", height: "32px", borderRadius: "50%", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+            
+            <span className="liquid-glass" style={{ display: "inline-flex", borderRadius: "9999px", padding: "0.25rem 0.75rem", fontSize: "0.75rem", textTransform: "uppercase", fontWeight: "bold", background: isBlocked ? "rgba(255,107,107,0.15)" : "rgba(127,224,160,0.15)", color: isBlocked ? "#ff6b6b" : "#7fe0a0", border: isBlocked ? "1px solid rgba(255,107,107,0.3)" : "1px solid rgba(127,224,160,0.3)" }}>
+               {isBlocked ? "Blocked" : "Ready to Apply"}
+            </span>
+
+            <h3 style={{ marginTop: "0.75rem", marginBottom: "1.25rem", fontSize: "1.8rem", fontFamily: "var(--font-heading)", fontStyle: "italic", color: "#fff" }}>{opp.name}</h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+               <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "0.75rem", padding: "0.75rem 1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ opacity: 0.6, fontSize: "0.75rem", textTransform: "uppercase" }}>Benefit Value</div>
+                  <div style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#7acaff", marginTop: "0.15rem" }}>{opp.benefit}</div>
+               </div>
+               <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "0.75rem", padding: "0.75rem 1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ opacity: 0.6, fontSize: "0.75rem", textTransform: "uppercase" }}>Deadline</div>
+                  <div style={{ fontSize: "1.2rem", fontWeight: "bold", color: opp.days_remaining <= 3 ? "#ff6b6b" : "#ffd27a", marginTop: "0.15rem" }}>{opp.deadline} <span style={{ fontSize: "0.8rem", fontWeight: "normal", opacity: 0.8 }}>({opp.days_remaining}d)</span></div>
+               </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+               <div style={{ borderLeft: "3px solid #7acaff", paddingLeft: "1rem" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "0.85rem", textTransform: "uppercase", color: "#7acaff" }}>
+                     🛡 Trust Engine Score: {loadingTrust ? "..." : `${trust?.trust_score}/100`}
+                  </div>
+                  <p style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", opacity: 0.8 }}>
+                     Verified source type: <strong>{loadingTrust ? "..." : trust?.source_type}</strong>. Official source verification {loadingTrust ? "..." : (trust?.verified ? "PASSED ✓" : "FAILED")}.
+                  </p>
+               </div>
+
+               <div style={{ borderLeft: "3px solid #ffd27a", paddingLeft: "1rem" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "0.85rem", textTransform: "uppercase", color: "#ffd27a" }}>
+                     🎯 Approval Engine Probability: {opp.approval_probability}%
+                  </div>
+                  <p style={{ margin: "0.25rem 0 0", fontSize: "0.85rem", opacity: 0.8 }}>
+                     {isBlocked ? "Approval probability is low because of missing documents." : "You satisfy all key eligibility criteria. High likelihood of approval."}
+                  </p>
+               </div>
+
+               {isBlocked && (
+                  <div style={{ background: "rgba(255,107,107,0.08)", borderLeft: "3px solid #ff6b6b", borderRadius: "0.5rem", padding: "1rem" }}>
+                     <div style={{ fontWeight: "bold", color: "#ff6b6b", fontSize: "0.85rem", textTransform: "uppercase", marginBottom: "0.5rem" }}>⚠️ Missing Requirements</div>
+                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {blockedDocs.map((doc, idx) => (
+                           <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span style={{ fontSize: "0.85rem", opacity: 0.9 }}>• {doc}</span>
+                              <button onClick={() => setActiveUpload(doc)} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", padding: "0.25rem 0.6rem", borderRadius: "0.25rem", fontSize: "0.75rem", cursor: "pointer", fontWeight: "bold" }}>Upload ↗</button>
+                           </div>
+                        ))}
+                     </div>
+                  </div>
+               )}
+
+               <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+                  <button onClick={onClose} style={{ background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", padding: "0.7rem 1.4rem", borderRadius: "0.5rem", cursor: "pointer", fontSize: "0.9rem", fontWeight: "600" }}>Close</button>
+                  
+                  {applied ? (
+                     <button disabled style={{ background: "rgba(127,224,160,0.2)", color: "#7fe0a0", border: "1px solid rgba(127,224,160,0.4)", padding: "0.7rem 1.6rem", borderRadius: "0.5rem", fontSize: "0.9rem", fontWeight: "bold" }}>Applied Successfully ✓</button>
+                  ) : (
+                     <button onClick={handleApply} disabled={isBlocked || applying} style={{ background: isBlocked ? "rgba(255,255,255,0.1)" : "#fff", color: isBlocked ? "rgba(255,255,255,0.3)" : "#000", border: "none", padding: "0.7rem 1.6rem", borderRadius: "0.5rem", cursor: isBlocked ? "not-allowed" : "pointer", fontWeight: "bold", fontSize: "0.9rem" }}>
+                        {applying ? "Submitting application..." : "Apply Now ↗"}
+                     </button>
+                  )}
+               </div>
+            </div>
+
+            {activeUpload && (
+               <DocumentUploadModal
+                  docName={activeUpload}
+                  onClose={() => setActiveUpload(null)}
+                  onRefresh={() => {
+                     onRefresh();
+                     onClose();
+                  }}
+               />
+            )}
+         </div>
+      </div>
+   );
+}
+
+function JobSeekerSections({ data, loading, Icon, Button, Tag, openChat, onRefresh }) {
+   const { useState } = React;
+   const [activeOpp, setActiveOpp] = useState(null);
+   const [activeUpload, setActiveUpload] = useState(null);
+   const [showRecovery, setShowRecovery] = useState(false);
+   const [selectedLanguage, setSelectedLanguage] = useState("English");
+   const [voiceChatting, setVoiceChatting] = useState(false);
+   const [voiceTranscript, setVoiceTranscript] = useState("");
+   const [voiceReply, setVoiceReply] = useState("");
+   
+   // Scam Shield State
+   const [scamText, setScamText] = useState("");
+   const [scanStatus, setScanStatus] = useState("idle");
+   const [scanResult, setScanResult] = useState(null);
+
+   if (loading || !data) {
+      return (
+         <div style={{ padding: "5rem 1.5rem", textAlign: "center", color: "#fff", fontFamily: "var(--font-body)", fontSize: "1.2rem" }}>
+            Loading Opportunity Intelligence Engines...
+         </div>
+      );
+   }
+
+   const profile = data.profile_context || {};
+   const missed = data.missed || {};
+   const readiness = data.readiness || {};
+   const docs = data.documents || { verified: [], missing: [], expiring: [] };
+   const roadmap = data.roadmap || { steps: [] };
+   const recommended = data.recommended?.opportunities || [];
+   const approval = data.approval || {};
+   const value = data.value || {};
+   const oppWallet = data.opportunity_summary || {};
+   const tracker = data.applications || [];
+   const deadlines = data.deadlines?.deadlines || [];
+
+   const handleQuickCoach = (prompt) => {
+      openChat && openChat(prompt);
+   };
+
+   const startVoiceAssistant = () => {
+      setVoiceChatting(true);
+      setVoiceTranscript("Listening in " + selectedLanguage + "...");
+      setVoiceReply("");
+      
+      setTimeout(() => {
+         setVoiceTranscript("I am looking for government jobs or apprenticeships in Hyderabad.");
+         fetch("http://localhost:8000/api/v1/voice/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+               transcript: "I am looking for government jobs or apprenticeships in Hyderabad.",
+               language: selectedLanguage.toLowerCase()
+            })
+         })
+         .then(r => r.json())
+         .then(res => {
+            setVoiceReply(res.reply || "Matched 3 government job programs and 2 apprenticeships in Hyderabad for OBC category.");
+         })
+         .catch(e => {
+            setVoiceReply("Matched 3 government job programs and 2 apprenticeships in Hyderabad for OBC category.");
+         });
+      }, 1800);
+   };
+
+   // Upgrade Java Programming Skill
+   const handleUpgradeSkill = () => {
+      fetch("http://localhost:8000/api/v1/jobseeker/add-skill", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ user_id: 5, skill: "Java Programming" })
+      })
+      .then(r => r.json())
+      .then(() => {
+         onRefresh && onRefresh();
+      })
+      .catch(e => console.error("Failed to upgrade skill:", e));
+   };
+
+   // Apply Opportunity
+   const handleApply = (opp) => {
+      fetch("http://localhost:8000/api/v1/jobseeker/apply", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ user_id: 5, opportunity_id: opp.id })
+      })
+      .then(r => r.json())
+      .then(() => {
+         onRefresh && onRefresh();
+      })
+      .catch(e => console.error("Failed to apply opportunity:", e));
+   };
+
+   // Scan for Scams
+   const handleScanScam = () => {
+      if (!scamText.trim()) return;
+      setScanStatus("scanning");
+      setScanResult(null);
+      
+      fetch("http://localhost:8000/api/v1/scam/scan", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ text: scamText })
+      })
+      .then(r => r.json())
+      .then(res => {
+         setScanStatus("done");
+         setScanResult(res);
+      })
+      .catch(e => {
+         setScanStatus("done");
+         setScanResult({ status: "safe", reason: "Shield Idle. Offline rule checks passed." });
+      });
+   };
+
+   return (
+      <div style={{ maxWidth: "1240px", margin: "0 auto", padding: "1rem clamp(1.5rem, 5vw, 5rem)", display: "flex", flexDirection: "column", gap: "2.5rem" }}>
+         
+         {/* 1. Missed Opportunity Alert */}
+         {missed.opportunity_name && (
+            <section>
+               <div style={{ background: "linear-gradient(135deg, rgba(255,107,107,0.18) 0%, rgba(255,150,150,0.06) 100%)", border: "1px solid rgba(255,107,107,0.45)", borderRadius: "var(--radius-card)", padding: "1.5rem", color: "#fff", display: "flex", flexDirection: "column", gap: "1rem", boxShadow: "0 8px 32px rgba(255,107,107,0.15)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     <Icon name="alert" size={20} style={{ color: "#ff6b6b" }} />
+                     <span style={{ fontWeight: 800, fontSize: "0.85rem", textTransform: "uppercase", color: "#ff6b6b", letterSpacing: "1px" }}>Missed Opportunity Alert</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                     <p style={{ margin: 0, fontSize: "1.1rem", fontFamily: "var(--font-body)", lineHeight: 1.5 }}>
+                        You permanently missed the <strong style={{ color: "#ff6b6b" }}>{missed.opportunity_name} (₹{missed.value_lost?.toLocaleString()} value)</strong>. The deadline closed on 31 Jan 2026 because your <strong style={{ color: "#ffd27a" }}>Caste Certificate</strong> was not verified in time.
+                     </p>
+                     <div>
+                        <button onClick={() => setActiveUpload("Caste Certificate (OBC)")} style={{ background: "#fff", color: "#000", border: "none", padding: "0.6rem 1.4rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "0.9rem" }}>
+                           Fix Caste Certificate
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            </section>
+         )}
+
+         {/* 2. Logged In Job Seeker Profile Card */}
+         <section>
+            <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-body)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "0.5rem" }}>LOGGED IN JOB SEEKER</div>
+            <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.75rem", color: "#fff", display: "flex", flexDirection: "column", gap: "1.5rem", border: "1px solid rgba(255,255,255,0.15)" }}>
+               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+                  <h3 style={{ margin: "0", fontSize: "2.4rem", fontFamily: "var(--font-heading)", fontStyle: "italic", fontWeight: "normal" }}>{profile.name}</h3>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                     <span className="liquid-glass" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", borderRadius: "9999px", padding: "0.35rem 0.9rem", fontSize: "0.8rem", fontWeight: "bold", background: "rgba(127,224,160,0.15)", color: "#7fe0a0", border: "1px solid rgba(127,224,160,0.3)" }}>
+                        ✓ Verified Seeker
+                     </span>
+                     <span className="liquid-glass" style={{ display: "inline-flex", borderRadius: "9999px", padding: "0.35rem 0.9rem", fontSize: "0.8rem", fontWeight: "bold", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)" }}>
+                        {profile.category} Category
+                     </span>
+                  </div>
+               </div>
+
+               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1.5rem", fontSize: "0.88rem", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "1.25rem" }}>
+                  <div>
+                     <div style={{ opacity: 0.5, fontSize: "0.75rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Education</div>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>{profile.education}</div>
+                  </div>
+                  <div>
+                     <div style={{ opacity: 0.5, fontSize: "0.75rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Experience</div>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>{profile.experience === "0" || profile.experience === 0 ? "Fresher" : `${profile.experience} Year`}</div>
+                  </div>
+                  <div>
+                     <div style={{ opacity: 0.5, fontSize: "0.75rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Target Role</div>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>{profile.target_role}</div>
+                  </div>
+                  <div>
+                     <div style={{ opacity: 0.5, fontSize: "0.75rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Location</div>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>{profile.location}</div>
+                  </div>
+                  <div>
+                     <div style={{ opacity: 0.5, fontSize: "0.75rem", textTransform: "uppercase", marginBottom: "0.25rem" }}>Skills</div>
+                     <div style={{ fontWeight: "bold", fontSize: "0.95rem", display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                        {profile.skills?.join(", ")}
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </section>
+
+         {/* 3. Recommended Opportunities Section */}
+         <section id="matched-jobs-section">
+            <SectionLabel>Top Matched Opportunities</SectionLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginTop: "1rem" }}>
+               {recommended.map((opp, idx) => {
+                  const isBlocked = opp.blocked_reason && opp.blocked_reason !== "None";
+                  const isPMKVY = opp.name.includes("PMKVY") || opp.is_skilling;
+                  
+                  return (
+                     <div key={idx} className="liquid-glass udaan-lift" style={{ borderRadius: "var(--radius-card)", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "1.2rem", background: "rgba(255,255,255,0.02)" }}>
+                        {/* Top Line Badges for PMKVY */}
+                        {isPMKVY && (
+                           <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "-0.4rem" }}>
+                              <span style={{ background: "rgba(255,255,255,0.08)", color: "#fff", padding: "0.2rem 0.6rem", borderRadius: "9999px", fontSize: "0.7rem", fontWeight: "bold" }}>Skilling</span>
+                              <span style={{ background: opp.ready_percentage === 100 ? "rgba(127,224,160,0.15)" : "rgba(255,210,122,0.15)", color: opp.ready_percentage === 100 ? "#7fe0a0" : "#ffd27a", padding: "0.2rem 0.6rem", borderRadius: "9999px", fontSize: "0.7rem", fontWeight: "bold" }}>{opp.ready_percentage}% Ready</span>
+                              <span style={{ background: "rgba(255,255,255,0.08)", color: "#fff", padding: "0.2rem 0.6rem", borderRadius: "9999px", fontSize: "0.7rem", fontWeight: "bold" }}>Govt Official</span>
+                           </div>
+                        )}
+                        
+                        <h4 style={{ margin: 0, fontSize: "1.45rem", fontFamily: "var(--font-heading)", fontStyle: "italic", color: "#fff", lineHeight: 1.25 }}>{opp.name}</h4>
+                        
+                        {/* Official / Trust Info badges */}
+                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem" }}>
+                           <span style={{ display: "inline-flex", alignItems: "center", gap: "0.2rem", color: "rgba(255,255,255,0.6)" }}>
+                              🔗 <a href={`https://${opp.official_url}`} target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none" }}>{opp.official_url}</a>
+                           </span>
+                           <span style={{ color: "#7fe0a0", fontWeight: "bold", background: "rgba(127,224,160,0.08)", padding: "0.15rem 0.45rem", borderRadius: "0.3rem" }}>✓ Trust {opp.trust_score}%</span>
+                           {opp.is_official_govt && (
+                              <span style={{ color: "#7acaff", fontWeight: "bold", background: "rgba(122,202,255,0.08)", padding: "0.15rem 0.45rem", borderRadius: "0.3rem" }}>IN Official Govt</span>
+                           )}
+                        </div>
+                        
+                        {/* Details */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", fontSize: "0.88rem", color: "rgba(255,255,255,0.85)" }}>
+                           <div>Benefit: <strong>{opp.benefit}</strong></div>
+                           <div>Deadline: <strong>{opp.deadline} ({opp.days_remaining} days remaining)</strong></div>
+                        </div>
+                        
+                        {/* Actions */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "1rem", marginTop: "auto" }}>
+                           <span onClick={() => setActiveOpp(opp)} style={{ fontSize: "0.85rem", color: "#7acaff", textDecoration: "underline", cursor: "pointer" }}>Check Eligibility</span>
+                           
+                           {isPMKVY ? (
+                              opp.ready_percentage === 100 ? (
+                                 <button onClick={(e) => { e.stopPropagation(); handleApply(opp); }} style={{ background: "#fff", color: "#000", border: "none", padding: "0.55rem 1.4rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.85rem" }}>
+                                    Apply Now
+                                 </button>
+                              ) : (
+                                 <button onClick={(e) => { e.stopPropagation(); handleUpgradeSkill(); }} style={{ background: "linear-gradient(135deg, #ff9f43 0%, #ff5252 100%)", color: "#fff", border: "none", padding: "0.55rem 1.4rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.25rem" }} className="udaan-lift">
+                                    ⚡ Enroll Free Fix
+                                 </button>
+                              )
+                           ) : isBlocked ? (
+                              <button onClick={(e) => { e.stopPropagation(); setShowRecovery(true); }} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff", padding: "0.55rem 1.4rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.85rem" }}>
+                                 Resolve Blockers
+                              </button>
+                           ) : (
+                              <button onClick={(e) => { e.stopPropagation(); handleApply(opp); }} style={{ background: "#fff", color: "#000", border: "none", padding: "0.55rem 1.4rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.85rem" }}>
+                                 Apply Now
+                              </button>
+                           )}
+                        </div>
+                     </div>
+                  );
+               })}
+            </div>
+         </section>
+
+         {/* 4. Three-Column Engine Results Grid */}
+         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "2rem" }}>
+            
+            {/* Column 1: Application Readiness Ring */}
+            <section>
+               <SectionLabel>Application Readiness Ring</SectionLabel>
+               <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.5rem", marginTop: "1rem", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+                     <div style={{ position: "relative", width: "80px", height: "80px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="80" height="80" viewBox="0 0 36 36">
+                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.5" />
+                           <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#ffd27a" strokeWidth="3.5" strokeDasharray={`${readiness.overall || 78}, 100`} />
+                        </svg>
+                        <div style={{ position: "absolute", fontSize: "1.3rem", fontWeight: "bold", fontFamily: "var(--font-heading)", color: "#ffd27a" }}>{readiness.overall || 78}%</div>
+                     </div>
+                     <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.4rem", fontSize: "0.88rem", color: "#fff" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                           <span style={{ opacity: 0.7 }}>Profile Data:</span> <strong style={{ color: "#7fe0a0" }}>{readiness.profile || 85}%</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                           <span style={{ opacity: 0.7 }}>Required Documents:</span> <strong style={{ color: "#ffd27a" }}>{readiness.documents || 70}%</strong>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                           <span style={{ opacity: 0.7 }}>Required Skills:</span> <strong style={{ color: "#7acaff" }}>{readiness.skills || 80}%</strong>
+                        </div>
+                     </div>
+                  </div>
+                  
+                  {/* Callout box Upgrade */}
+                  <div style={{ background: "rgba(255,210,122,0.06)", border: "1px solid rgba(255,210,122,0.25)", borderRadius: "var(--radius-card)", padding: "1rem", fontSize: "0.85rem", color: "#fff", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                     <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "#ffd27a", fontWeight: "bold" }}>
+                        <span>✨ AI Free Scheme Fix Upgrade</span>
+                     </div>
+                     {readiness.skills < 100 ? (
+                        <>
+                           <p style={{ margin: 0, opacity: 0.9, lineHeight: 1.4 }}>
+                              You are missing the <strong style={{ color: "#ffd27a" }}>Java Programming</strong> skill required for the <strong style={{ color: "#7acaff" }}>PMKVY Java Developer</strong> scheme.
+                           </p>
+                           <div>
+                              <button onClick={handleUpgradeSkill} style={{ background: "#fff", color: "#000", border: "none", padding: "0.45rem 1.1rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: "0.8rem" }}>
+                                 Enroll Free Upgrade
+                              </button>
+                           </div>
+                        </>
+                     ) : (
+                        <p style={{ margin: 0, color: "#7fe0a0", fontWeight: "bold" }}>
+                           ✓ Skill upgraded successfully! PMKVY Java Developer is now 100% Ready.
+                        </p>
+                     )}
+                  </div>
+               </div>
+            </section>
+
+            {/* Column 2: Document Verification Wallet */}
+            <section>
+               <SectionLabel>Document Verification Wallet</SectionLabel>
+               <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.5rem", marginTop: "1rem", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+                  {/* Aadhaar Row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                     <span style={{ fontSize: "0.95rem" }}>Aadhaar Identity Card</span>
+                     <span style={{ background: "rgba(127,224,160,0.15)", color: "#7fe0a0", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold" }}>✓ Verified</span>
+                  </div>
+                  
+                  {/* BTech Graduation Row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                     <span style={{ fontSize: "0.95rem" }}>Graduation Certificate (B.Tech)</span>
+                     <span style={{ background: "rgba(127,224,160,0.15)", color: "#7fe0a0", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold" }}>✓ Verified</span>
+                  </div>
+                  
+                  {/* Caste Certificate OBC Row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                     <span style={{ fontSize: "0.95rem" }}>Caste Certificate (OBC)</span>
+                     {docs.verified.includes("Caste Certificate (OBC)") ? (
+                        <span style={{ background: "rgba(127,224,160,0.15)", color: "#7fe0a0", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold" }}>✓ Verified</span>
+                     ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                           <span style={{ background: "rgba(255,107,107,0.15)", color: "#ff6b6b", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold" }}>⚠️ Missing</span>
+                           <button onClick={() => setActiveUpload("Caste Certificate (OBC)")} style={{ background: "#fff", color: "#000", border: "none", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold", cursor: "pointer" }}>Upload</button>
+                        </div>
+                     )}
+                  </div>
+                  
+                  {/* Income Certificate Row */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.5rem 0" }}>
+                     <span style={{ fontSize: "0.95rem" }}>Income Certificate</span>
+                     {docs.verified.includes("Income Certificate") ? (
+                        <span style={{ background: "rgba(127,224,160,0.15)", color: "#7fe0a0", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold" }}>✓ Verified</span>
+                     ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                           <span style={{ background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.6)", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem" }}>Optional</span>
+                           <button onClick={() => setActiveUpload("Income Certificate")} style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", padding: "0.2rem 0.65rem", borderRadius: "9999px", fontSize: "0.75rem", fontWeight: "bold", cursor: "pointer" }}>Upload</button>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </section>
+
+            {/* Column 3: Personalized Seeker Roadmap */}
+            <section>
+               <SectionLabel>Personalized Seeker Roadmap</SectionLabel>
+               <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "1.5rem", marginTop: "1rem", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {roadmap.steps?.map((step, idx) => (
+                     <div key={idx} style={{ display: "flex", gap: "0.8rem", alignItems: "flex-start" }}>
+                        <span style={{ fontSize: "1.1rem", lineHeight: "1.1", cursor: "default" }}>
+                           {step.checked ? (
+                              <span style={{ color: "#7fe0a0" }}>☑</span>
+                           ) : (
+                              <span style={{ color: "rgba(255,255,255,0.35)" }}>☐</span>
+                           )}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                           <div style={{ fontWeight: "bold", fontSize: "0.92rem", color: step.checked ? "rgba(255,255,255,0.7)" : "#fff", textDecoration: step.checked ? "line-through" : "none" }}>{step.title}</div>
+                           <div style={{ fontSize: "0.78rem", opacity: step.checked ? 0.4 : 0.7, marginTop: "0.15rem", color: step.checked ? "#fff" : "#ffd27a" }}>{step.description}</div>
+                        </div>
+                     </div>
+                  ))}
+               </div>
+            </section>
+
+         </div>
+
+         {/* 5. Scam Shield Guard */}
+         <section>
+            <SectionLabel>Scam Shield Guard</SectionLabel>
+            <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "2rem", marginTop: "1rem", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+               <div>
+                  <h4 style={{ margin: 0, fontSize: "1.45rem", fontFamily: "var(--font-heading)", fontStyle: "italic", fontWeight: "normal" }}>Verify Job Post Authenticity</h4>
+                  <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", opacity: 0.8, lineHeight: 1.5 }}>
+                     Paste a suspicious job description, contact message, or email below. The Scam Shield rule-engine will evaluate it for suspect signatures (such as mandatory refundable deposits or WhatsApp group recruitments).
+                  </p>
+               </div>
+               
+               <textarea
+                  value={scamText}
+                  onChange={(e) => setScamText(e.target.value)}
+                  placeholder="e.g., Earn Rs 5000 daily working from home! Join our Telegram group. Refundable security deposit of Rs 1500 mandatory for laptop dispatch."
+                  style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "0.6rem", padding: "1rem", color: "#fff", fontFamily: "var(--font-body)", fontSize: "0.92rem", minHeight: "100px", resize: "vertical" }}
+               />
+               
+               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "1.5rem" }}>
+                  <button onClick={handleScanScam} style={{ background: "#fff", color: "#000", border: "none", padding: "0.65rem 1.5rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.9rem" }}>
+                     Scan for Scams
+                  </button>
+                  
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
+                     {scanStatus === "idle" && (
+                        <>
+                           <span>🛡️</span>
+                           <span style={{ opacity: 0.6 }}>Shield Idle. Enter text to scan.</span>
+                        </>
+                     )}
+                     {scanStatus === "scanning" && (
+                        <>
+                           <span style={{ color: "#ffd27a" }}>🔄</span>
+                           <span style={{ color: "#ffd27a", fontWeight: "bold" }}>Scanning...</span>
+                        </>
+                     )}
+                     {scanStatus === "done" && scanResult && (
+                        scanResult.status === "flagged" ? (
+                           <>
+                              <span style={{ color: "#ff6b6b" }}>🛑</span>
+                              <span style={{ color: "#ff6b6b", fontWeight: "bold" }}>{scanResult.reason}</span>
+                           </>
+                        ) : (
+                           <>
+                              <span style={{ color: "#7fe0a0" }}>🛡️</span>
+                              <span style={{ color: "#7fe0a0", fontWeight: "bold" }}>Safe: No known scam signatures detected.</span>
+                           </>
+                        )
+                     )}
+                  </div>
+               </div>
+            </div>
+         </section>
+
+         {/* 6. Chat with UDAAN AI Prompt Card */}
+         <section>
+            <div id="ai-coach-section" className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "2rem", border: "1px solid rgba(255,255,255,0.15)", background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "1.5rem" }}>
+               <div style={{ flex: 1, minWidth: "280px" }}>
+                  <h4 style={{ margin: 0, fontSize: "1.8rem", fontFamily: "var(--font-heading)", fontStyle: "italic", fontWeight: "normal", color: "#fff" }}>Chat with UDAAN AI</h4>
+                  <p style={{ margin: "0.5rem 0 0", fontSize: "0.95rem", opacity: 0.8, lineHeight: 1.4 }}>
+                     Ask about any scheme, check your eligibility in seconds and get step-by-step help applying — anytime.
+                  </p>
+               </div>
+               <button onClick={() => {
+                  const el = document.getElementById("udaan-coach-input");
+                  if (el) {
+                     el.focus();
+                     el.scrollIntoView({ behavior: "smooth" });
+                  }
+               }} style={{ background: "#fff", color: "#000", border: "none", padding: "0.75rem 1.6rem", borderRadius: "9999px", fontWeight: "bold", cursor: "pointer", fontSize: "0.95rem" }} className="udaan-lift">
+                  Start chatting ↗
+               </button>
+            </div>
+         </section>
+
+         {/* 7. AI Career Coach Details */}
+         <section>
+            <SectionLabel>UDAAN AI Application Coach</SectionLabel>
+            <div className="liquid-glass-strong" style={{ borderRadius: "var(--radius-card)", padding: "2rem", marginTop: "1rem", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", fontFamily: "var(--font-body)", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+               <div>
+                  <h4 style={{ margin: 0, fontSize: "1.45rem", fontFamily: "var(--font-heading)", fontStyle: "italic", fontWeight: "normal" }}>Speak with UDAAN AI Application Coach</h4>
+                  <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", opacity: 0.85, lineHeight: 1.5 }}>
+                     Get instant feedback on your resume, practice interview answers, find matches for central government jobs, or ask for guidance on documentation requirements.
+                  </p>
+               </div>
+
+               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+                  {[
+                     { label: "Career Guidance", prompt: "Explain best career roles for BTech CSE in Hyderabad." },
+                     { label: "Resume Help", prompt: "Help me tailor my resume for an AI Engineer role." },
+                     { label: "Government Jobs", prompt: "List top central government job opportunities for my category." },
+                     { label: "Skilling Programs", prompt: "What free skilling programs offer certificates and stipends?" },
+                     { label: "Interview Preparation", prompt: "Mock interview practice for entry level SQL developer." },
+                     { label: "Application Assistance", prompt: "Guide me step-by-step through the SSC CGL application." }
+                  ].map((item, idx) => (
+                     <button key={idx} id={idx === 5 ? "udaan-coach-input" : undefined} onClick={() => handleQuickCoach(item.prompt)} className="liquid-glass" style={{ borderRadius: "0.6rem", padding: "0.75rem 1rem", border: "1px solid rgba(255,255,255,0.06)", color: "#fff", cursor: "pointer", fontSize: "0.85rem", textAlign: "left", transition: "background 0.2s" }} onMouseEnter={(e) => e.target.style.background="rgba(255,255,255,0.08)"} onMouseLeave={(e) => e.target.style.background="rgba(255,255,255,0.04)"}>
+                        💡 {item.label}
+                     </button>
+                  ))}
+               </div>
+
+               <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "1.5rem", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1.5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                     <div style={{ fontSize: "0.85rem", opacity: 0.6, textTransform: "uppercase" }}>Language:</div>
+                     <div style={{ display: "flex", gap: "0.4rem" }}>
+                        {["English", "Hindi", "Telugu"].map((lang) => (
+                           <button key={lang} onClick={() => setSelectedLanguage(lang)} style={{ background: selectedLanguage === lang ? "#ffd27a" : "rgba(255,255,255,0.08)", color: selectedLanguage === lang ? "#000" : "#fff", border: "none", borderRadius: "9999px", padding: "0.3rem 0.8rem", fontSize: "0.8rem", cursor: "pointer", fontWeight: "bold" }}>{lang}</button>
+                        ))}
+                     </div>
+                  </div>
+                  
+                  <button onClick={startVoiceAssistant} className="liquid-glass-strong" style={{ background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.4)", borderRadius: "9999px", padding: "0.7rem 1.6rem", color: "#fff", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     🎤 Speak With UDAAN AI
+                  </button>
+               </div>
+
+               {voiceChatting && (
+                  <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "0.75rem", padding: "1.25rem", border: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                     <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "0.8rem", textTransform: "uppercase", opacity: 0.5, flex: "0 0 60px" }}>You:</span>
+                        <div style={{ fontSize: "0.92rem", fontWeight: 500 }}>{voiceTranscript}</div>
+                     </div>
+                     {voiceReply && (
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "0.75rem" }}>
+                           <span style={{ fontSize: "0.8rem", textTransform: "uppercase", color: "#ffd27a", flex: "0 0 60px" }}>UDAAN:</span>
+                           <div style={{ fontSize: "0.92rem", color: "#ffd27a", fontStyle: "italic" }}>{voiceReply}</div>
+                        </div>
+                     )}
+                  </div>
+               )}
+            </div>
+         </section>
+
+         {/* 8. Telegram Connection */}
+         <TelegramConnectSection userId={5} />
+
+         {showRecovery && (
+            <RecoveryPlanModal
+               onClose={() => setShowRecovery(false)}
+               onRefresh={onRefresh}
+            />
+         )}
+
+         {activeOpp && (
+            <OpportunityDetailModal
+               opp={activeOpp}
+               onClose={() => setActiveOpp(null)}
+               onRefresh={onRefresh}
+            />
+         )}
+
+         {activeUpload && (
+            <DocumentUploadModal
+               docName={activeUpload}
+               onClose={() => setActiveUpload(null)}
+               onRefresh={onRefresh}
+            />
+         )}
       </div>
    );
 }

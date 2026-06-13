@@ -1,19 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel import Session, select
+from app.core.db import get_session
+from app.models.domain import MissedOpportunity, Opportunity
 
 router = APIRouter()
 
 @router.get("/lifecycle/missed-opportunities", tags=["Lifecycle"])
-def get_missed_opportunities():
-    """Get list of opportunities user permanently lost."""
-    return [
-        {
-            "opportunity_id": 3,
-            "title": "NSP Post-Matric Scholarship",
-            "missed_value": 15000.0,
-            "root_cause": "Application deadline passed. Caste certificate not uploaded.",
-            "missed_date": "2025-01-15"
+def get_missed_opportunities(user_id: int = 5, session: Session = Depends(get_session)):
+    mo = session.exec(select(MissedOpportunity).where(MissedOpportunity.user_id == user_id)).first()
+    if mo:
+        opp = session.exec(select(Opportunity).where(Opportunity.id == mo.opportunity_id)).first()
+        opp_name = opp.title if opp else "National Merit Scholarship"
+        return {
+            "opportunity_name": opp_name,
+            "value_lost": mo.missed_value,
+            "reason": mo.root_cause,
+            "recovery_action": "Generate Income Certificate"
         }
-    ]
+    return {
+        "opportunity_name": "National Merit Scholarship",
+        "value_lost": 12000,
+        "reason": "Missing Income Certificate",
+        "recovery_action": "Generate Income Certificate"
+    }
 
 @router.get("/lifecycle/recovery-plan", tags=["Lifecycle"])
 def get_recovery_plan():

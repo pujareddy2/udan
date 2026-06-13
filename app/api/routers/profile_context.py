@@ -44,3 +44,61 @@ def generate_profile_context(req: ProfileContextRequest, session: Session = Depe
         "categories": categories,
         "opportunity_categories": categories
     }
+
+from app.models.domain import JobSeekerProfile, Document
+
+@router.get("/profile-context/{user_id}", tags=["Profile Context Engine"])
+def get_profile_context(user_id: int, session: Session = Depends(get_session)):
+    user_profile = session.exec(select(UserProfile).where(UserProfile.user_id == user_id)).first()
+    js_profile = session.exec(select(JobSeekerProfile).where(JobSeekerProfile.user_id == user_id)).first()
+    
+    if not user_profile:
+        return {
+            "name": "Puja",
+            "education": "BTech CSE",
+            "experience": "0",
+            "target_role": "AI Engineer",
+            "location": "Hyderabad",
+            "skills": ["Python", "SQL"],
+            "category": "OBC",
+            "verification_status": "Verified",
+            "profile_completion": 86,
+            "readiness_score": 81,
+            "approval_probability": 88
+        }
+        
+    user_docs = session.exec(select(Document).where(Document.user_id == user_id)).all()
+    verified_docs = {d.document_master.document_name for d in user_docs if d.status == "Verified" and d.document_master}
+    
+    category = user_profile.category or "OBC"
+    location = f"{user_profile.district.title()}, {user_profile.state.title()}" if user_profile.district and user_profile.state else (user_profile.district or "Hyderabad")
+    name = user_profile.full_name or "Aanya Kumar"
+    
+    if js_profile:
+        education = js_profile.education_level
+        experience = f"{int(js_profile.years_of_experience)} Year" if js_profile.years_of_experience == 1 else f"{int(js_profile.years_of_experience)} Years"
+        target_role = js_profile.preferred_job_role or "Junior Software Engineer"
+        skills = js_profile.skills or ["Python", "SQL", "HTML", "CSS"]
+    else:
+        education = "B.Tech In Computer Science"
+        experience = "1 Year"
+        target_role = "Junior Software Engineer"
+        skills = ["Python", "SQL", "HTML", "CSS"]
+        
+    doc_count = len(verified_docs)
+    readiness = min(100, 50 + doc_count * 15)
+    approval = min(100, 60 + doc_count * 10)
+    
+    return {
+        "name": name,
+        "education": education,
+        "experience": experience,
+        "target_role": target_role,
+        "location": location,
+        "skills": skills,
+        "category": category,
+        "verification_status": "Verified Seeker" if doc_count >= 2 else "Pending Verification",
+        "profile_completion": 86,
+        "readiness_score": readiness,
+        "approval_probability": approval
+    }
