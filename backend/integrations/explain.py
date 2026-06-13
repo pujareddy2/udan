@@ -14,9 +14,8 @@ LANG_MAP = {
 def clean_json_array(raw: str) -> str:
     """Removes markdown wrappers like ```json and ```"""
     clean = raw.strip()
-    if clean.startswith("```"):
-        clean = re.sub(r"^```[a-zA-Z]*\n", "", clean)
-        clean = re.sub(r"\n```$", "", clean)
+    clean = re.sub(r"^```(?:json)?\s*", "", clean)
+    clean = re.sub(r"\s*```$", "", clean)
     return clean.strip()
 
 def explain(engine_result: Dict[str, Any], language: str = "en") -> Dict[str, Any]:

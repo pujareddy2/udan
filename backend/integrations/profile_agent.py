@@ -22,18 +22,16 @@ class ProfileModel(BaseModel):
 def clean_json_string(raw: str) -> str:
     """Removes markdown wrappers like ```json and ```"""
     clean = raw.strip()
-    if clean.startswith("```"):
-        # Remove first line (e.g. ```json)
-        clean = re.sub(r"^```[a-zA-Z]*\n", "", clean)
-        # Remove trailing ```
-        clean = re.sub(r"\n```$", "", clean)
+    clean = re.sub(r"^```(?:json)?\s*", "", clean)
+    clean = re.sub(r"\s*```$", "", clean)
     return clean.strip()
 
 def parse_profile(text: str, module: str, lang: str = "en") -> Optional[Dict[str, Any]]:
     prompt = (
         f"You extract a user profile as JSON. Output ONLY valid JSON with keys: "
         f"name, age (int), gender, category (general/OBC/SC/ST/EWS/PwD/women), state, "
-        f"qualification, income (int annual rupees), skills (array), interests (array). "
+        f"qualification (none/8th_pass/10th_pass/12th_pass/higher_secondary/iti/diploma/graduate/post-graduate), "
+        f"income (int annual rupees), skills (array), interests (array). "
         f"Use null if unknown. User (language={lang}) said: {text}"
     )
 
@@ -47,6 +45,11 @@ def parse_profile(text: str, module: str, lang: str = "en") -> Optional[Dict[str
         
         # Inject the strictly required module field
         parsed_dict["module"] = module
+        
+        # Ensure list fields are always lists
+        for field in ["skills", "interests", "documents"]:
+            if parsed_dict.get(field) is None:
+                parsed_dict[field] = []
         
         # Validate through Pydantic to ensure types are strictly cast
         validated_profile = ProfileModel(**parsed_dict)
@@ -68,9 +71,9 @@ def profile_from_form(form: Dict[str, Any], module: str) -> Dict[str, Any]:
         "state": form.get("state"),
         "qualification": form.get("qualification"),
         "income": int(form.get("income")) if form.get("income") else None,
-        "skills": form.get("skills", []),
-        "interests": form.get("interests", []),
-        "documents": form.get("documents", []),
+        "skills": form.get("skills") if form.get("skills") is not None else [],
+        "interests": form.get("interests") if form.get("interests") is not None else [],
+        "documents": form.get("documents") if form.get("documents") is not None else [],
         "module": module
     }
     

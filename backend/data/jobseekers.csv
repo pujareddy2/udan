@@ -3,5 +3,5 @@ SSC CGL 2026,Staff Selection Commission Combined Graduate Level,jobseeker,True,2
 SSC CHSL 2024,Staff Selection Commission Combined Higher Secondary Level,jobseeker,False,2024-05-01,ssc.nic.in,0,18,27,30,32,37,["12th_pass"],[],[],["Aadhaar"],["typing"],
 RRB NTPC 2025,Railway Recruitment Board Non-Technical Popular Categories,jobseeker,True,2025-10-10,rrbcdg.gov.in,0,18,30,33,35,40,["graduate"],[],[],["Aadhaar"],["typing"],
 TSPSC Group 4 2026,Telangana State Public Service Commission Group IV,jobseeker,True,2026-11-01,tspsc.gov.in,0,18,44,47,49,54,["graduate"],[],["telangana"],["Domicile Certificate"],[],
-NAPS Apprenticeship,National Apprenticeship Promotion Scheme,jobseeker,True,,apprenticeshipindia.gov.in,10000,14,,,,,,["10th_pass"],[],[],["Aadhaar"],[],
-PMKVY,Pradhan Mantri Kaushal Vikas Yojana,jobseeker,True,,pmkvyofficial.org,0,15,,,,,,[],[],[],["Aadhaar"],[],
+NAPS Apprenticeship,National Apprenticeship Promotion Scheme,jobseeker,True,,apprenticeshipindia.gov.in,10000,14,,,,["10th_pass"],[],[],["Aadhaar"],[],
+PMKVY,Pradhan Mantri Kaushal Vikas Yojana,jobseeker,True,,pmkvyofficial.org,0,15,,,,[],[],[],["Aadhaar"],[],

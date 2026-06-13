@@ -62,7 +62,7 @@ def check_eligibility(profile: Dict[str, Any], opp: Dict[str, Any]) -> Dict[str,
     if max_age and prof_age is not None:
         try:
             if prof_age > int(float(max_age)):
-                reasons.append(f"Maximum allowed age for {prof_cat.upper()} category is {max_age}.")
+                reasons.append(f"Age exceeds the maximum allowed age for {prof_cat.upper()} category ({max_age}).")
                 core_failed = True
         except ValueError:
             pass
