@@ -109,10 +109,6 @@ class Opportunity(SQLModel, table=True):
     deadlines: List["OpportunityDeadline"] = Relationship(back_populates="opportunity")
     categories: List["OpportunityCategory"] = Relationship(back_populates="opportunity")
     applications: List["Application"] = Relationship(back_populates="opportunity")
-    wallet_entries: List["OpportunityWallet"] = Relationship(
-        back_populates="opportunity",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
 
 class OpportunityDeadline(SQLModel, table=True):
     __tablename__ = "opportunity_deadlines"
