@@ -48,8 +48,8 @@ def load_opportunities_from_csv(file_path: str, module_type: str, db: Session):
             "land_owner_required": row.get('land_owner_required'),
             "required_skills": row.get('required_skills'),
         }
-        # Clean out None/empty values to keep JSON minimal
-        eligibility_rules = {k: v for k, v in eligibility_rules.items() if v not in (None, "", "NaN")}
+        # Clean out None/empty/NaN values to keep JSON minimal
+        eligibility_rules = {k: v for k, v in eligibility_rules.items() if pd.notna(v) and v not in (None, "", "NaN", "nan")}
 
         # 2. Map Benefits
         benefits = {
@@ -57,18 +57,29 @@ def load_opportunities_from_csv(file_path: str, module_type: str, db: Session):
             "benefit_type": row.get('benefit_type'),
             "renewal_frequency": row.get('renewal_frequency'),
         }
-        benefits = {k: v for k, v in benefits.items() if v not in (None, "", "NaN")}
+        benefits = {k: v for k, v in benefits.items() if pd.notna(v) and v not in (None, "", "NaN", "nan")}
 
         # 3. Map Metadata
         metadata_info = {
             "opportunity_type": row.get('opportunity_type'),
             "source_type": row.get('source_type'),
-            "required_followup_questions": [q.strip() for q in str(row.get('required_followup_questions', '')).split(',') if q.strip()],
+            "required_followup_questions": [q.strip() for q in str(row.get('required_followup_questions', '')).split(',') if q.strip() and str(q).lower() != 'nan'],
             "readiness_score_formula": row.get('readiness_score_formula'),
             "eligibility_explanation": row.get('eligibility_explanation'),
             "notification_trigger": row.get('notification_trigger')
         }
-        metadata_info = {k: v for k, v in metadata_info.items() if v not in (None, "", "NaN", [])}
+        def is_valid(v):
+            """Return True if value is safe to store (not None/NaN/empty)."""
+            if v is None:
+                return False
+            if isinstance(v, list):
+                return len(v) > 0
+            try:
+                return pd.notna(v) and str(v) not in ("", "NaN", "nan", "None")
+            except Exception:
+                return False
+
+        metadata_info = {k: v for k, v in metadata_info.items() if is_valid(v)}
 
         # 4. Map required documents
         req_docs_str = row.get('required_documents')
