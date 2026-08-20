@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from sqlmodel import Session
 from app.core.db import engine, init_db
-from app.models.opportunity import Opportunity
+from app.models.domain import Opportunity
 
 def parse_date(date_string):
     if not date_string or pd.isna(date_string):
@@ -96,6 +96,7 @@ def load_opportunities_from_csv(file_path: str, module_type: str, db: Session):
 
         opp = Opportunity(
             title=row.get('title', 'Unknown Opportunity'),
+            module=module_type,
             module_type=module_type,
             provider=row.get('source_name', 'Unknown Provider'),
             description=row.get('description', ''),

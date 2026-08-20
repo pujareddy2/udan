@@ -252,3 +252,50 @@ class EligibilityEngine:
             return EligibilityCheckResult(passed=False, missing=True, weight=15.0, message="Docs missing", missing_field="documents")
             
         return EligibilityCheckResult(passed=True, missing=False, weight=15.0, message="All docs present")
+
+# Helper functions for readiness/eligibility matching
+import json
+
+def get_field(obj: Any, field: str, default: Any = None) -> Any:
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(field, default)
+    return getattr(obj, field, default)
+
+def is_missing(val: Any) -> bool:
+    if val is None:
+        return True
+    if isinstance(val, str) and val.strip() in ("", "None", "nan", "NaN"):
+        return True
+    if isinstance(val, float):
+        import math
+        return math.isnan(val)
+    return False
+
+def safe_float(val: Any, default: float = 0.0) -> float:
+    if val is None or val == "":
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+def safe_list(val: Any) -> List[Any]:
+    if val is None:
+        return []
+    if isinstance(val, list):
+        return val
+    if isinstance(val, str):
+        val_str = val.strip()
+        if not val_str:
+            return []
+        if val_str.startswith("[") and val_str.endswith("]"):
+            try:
+                parsed = json.loads(val_str)
+                if isinstance(parsed, list):
+                    return parsed
+            except Exception:
+                pass
+        return [item.strip() for item in val_str.split(",") if item.strip()]
+    return [val]
